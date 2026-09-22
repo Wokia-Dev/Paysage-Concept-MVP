@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { db, INITIAL_PROFILES, ensureSeedData } from '../lib/db';
+import { syncEngine } from '../lib/sync';
 import type { Profile, UserRole } from '../types/database';
 import { AuthContext } from './auth-context-base';
 
@@ -38,21 +39,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const wasDemo = localStorage.getItem(LOCAL_STORAGE_IS_DEMO_KEY) === 'true';
         setIsDemo(wasDemo);
 
-        // 1. Vérifier si un profil est mémorisé en local (mode terrain / offline)
+        // 1. Restaurer immédiatement le profil local (mode offline-first instantané)
         const savedProfileId = localStorage.getItem(LOCAL_STORAGE_ACTIVE_PROFILE_KEY);
         if (savedProfileId) {
           const cached = await db.profiles.get(savedProfileId);
           if (cached) {
             setProfile(cached);
-            setLoading(false);
-            return;
           }
         }
 
-        // 2. Si en ligne, tenter de récupérer la session Supabase
+        // 2. Si en ligne, vérifier et synchroniser avec la session Supabase
         if (navigator.onLine) {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
+            setIsDemo(false);
+            localStorage.removeItem(LOCAL_STORAGE_IS_DEMO_KEY);
+
             const { data: remoteProfile } = await supabase
               .from('profiles')
               .select('*')
@@ -64,6 +66,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               localStorage.setItem(LOCAL_STORAGE_ACTIVE_PROFILE_KEY, remoteProfile.id);
               setProfile(remoteProfile);
             }
+
+            // Récupère les chantiers, affectations et pointages depuis Supabase
+            await syncEngine.pullRemoteData();
+            await syncEngine.triggerSync();
+          } else if (!savedProfileId) {
+            setProfile(null);
           }
         }
       } catch (err) {
@@ -110,6 +118,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem(LOCAL_STORAGE_IS_DEMO_KEY);
         setIsDemo(false);
         setProfile(userProfile);
+        // Téléchargement immédiat de tous les chantiers, affectations et pointages de Supabase
+        syncEngine.pullRemoteData().catch(console.error);
         return { success: true };
       }
 

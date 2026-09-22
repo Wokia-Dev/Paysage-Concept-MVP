@@ -111,6 +111,10 @@ export function Chantiers() {
     let isMounted = true;
     const fetchInitial = async () => {
       if (isMounted) await loadData();
+      if (navigator.onLine) {
+        await syncEngine.pullRemoteData();
+        if (isMounted) await loadData();
+      }
     };
     fetchInitial();
 

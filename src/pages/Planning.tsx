@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { db, getTodayDateString } from '../lib/db';
+import { syncEngine } from '../lib/sync';
 import { useAuth } from '../context/useAuth';
 import type { Chantier, Affectation, Profile } from '../types/database';
 import {
@@ -46,17 +47,44 @@ export function Planning() {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
     async function loadPlanningData() {
-      const [allChantiers, allAffectations, allProfiles] = await Promise.all([
-        db.chantiers.toArray(),
-        db.affectations.toArray(),
-        db.profiles.toArray(),
-      ]);
-      setChantiers(allChantiers);
-      setAffectations(allAffectations);
-      setProfiles(allProfiles);
+      try {
+        const [allChantiers, allAffectations, allProfiles] = await Promise.all([
+          db.chantiers.toArray(),
+          db.affectations.toArray(),
+          db.profiles.toArray(),
+        ]);
+        if (isMounted) {
+          setChantiers(allChantiers);
+          setAffectations(allAffectations);
+          setProfiles(allProfiles);
+        }
+
+        if (navigator.onLine) {
+          await syncEngine.pullRemoteData();
+          if (isMounted) {
+            const [freshCh, freshAff, freshPr] = await Promise.all([
+              db.chantiers.toArray(),
+              db.affectations.toArray(),
+              db.profiles.toArray(),
+            ]);
+            setChantiers(freshCh);
+            setAffectations(freshAff);
+            setProfiles(freshPr);
+          }
+        }
+      } catch (err) {
+        console.error('Erreur chargement planning:', err);
+      }
     }
+
     loadPlanningData();
+    const unsub = syncEngine.subscribe(loadPlanningData);
+    return () => {
+      isMounted = false;
+      unsub();
+    };
   }, []);
 
   // Détermination du profileId ciblé pour le filtrage

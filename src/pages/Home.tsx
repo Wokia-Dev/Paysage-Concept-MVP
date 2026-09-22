@@ -147,6 +147,10 @@ export function Home() {
     let isMounted = true;
     const fetchInitial = async () => {
       if (isMounted) await refreshData();
+      if (navigator.onLine) {
+        await syncEngine.pullRemoteData();
+        if (isMounted) await refreshData();
+      }
     };
     fetchInitial();
 
