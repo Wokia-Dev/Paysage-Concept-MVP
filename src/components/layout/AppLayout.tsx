@@ -28,7 +28,7 @@ export function AppLayout() {
       {/* Container mobile standardisé (390px - 448px) avec centrage sur desktop */}
       <div className="w-full max-w-md min-h-screen flex flex-col bg-white shadow-xl relative border-x border-sable/40">
         {/* Header persistant */}
-        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-sable/70 px-4 py-3 flex items-center justify-between pt-safe">
+        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-sable/70 px-4 pt-safe pb-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-foret flex items-center justify-center text-sable shadow-xs">
               <Trees className="w-5 h-5 text-sable" />
