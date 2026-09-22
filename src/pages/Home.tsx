@@ -85,10 +85,18 @@ export function Home() {
         setSelectedChantier((prev) => prev || defaultCh);
       }
 
-      // Pointages personnels du jour
+      // Pointages personnels du jour (dédoublonnés pour éviter doublon local/distant)
+      const seenTimeKeys = new Set<string>();
       const filtered = userPointagesData
         .filter((pt) => pt.horodatage.startsWith(todayStr))
-        .sort((a, b) => new Date(a.horodatage).getTime() - new Date(b.horodatage).getTime());
+        .sort((a, b) => new Date(a.horodatage).getTime() - new Date(b.horodatage).getTime())
+        .filter((pt) => {
+          const timeMinute = pt.horodatage.substring(0, 16); // Précision à la minute
+          const key = `${pt.type}-${timeMinute}`;
+          if (seenTimeKeys.has(key)) return false;
+          seenTimeKeys.add(key);
+          return true;
+        });
       setTodayPointages(filtered);
 
       // Pour les chefs d'équipe : calculer le statut de toute l'équipe

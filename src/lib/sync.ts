@@ -12,6 +12,17 @@ export interface SyncResult {
   requiresRealAuth?: boolean;
 }
 
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 class SyncEngine {
   private isSyncing = false;
   private listeners: Array<() => void> = [];
@@ -46,12 +57,12 @@ class SyncEngine {
 
   /**
    * Enregistre un pointage dans Dexie immédiatement (zéro latence)
-   * et déclenche la synchro réseau en arrière-plan.
+   * avec un UUID strict compatible PostgreSQL/Supabase, puis déclenche la synchro.
    */
   public async addPointage(
     data: Omit<PointageLocal, 'id' | 'synced'>
   ): Promise<PointageLocal> {
-    const localId = `pt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const localId = generateUUID();
     const pointage: PointageLocal = {
       ...data,
       id: localId,
@@ -115,7 +126,11 @@ class SyncEngine {
 
       for (const pt of pending) {
         try {
+          // Utilise le même UUID que localement pour éviter tout doublon après pull
+          const targetId = pt.id.startsWith('pt-') ? generateUUID() : pt.id;
+
           const payload = {
+            id: targetId,
             profile_id: session.user.id, // Toujours utiliser l'UID Supabase authentifié
             chantier_id: pt.chantier_id,
             type: pt.type,
@@ -128,7 +143,12 @@ class SyncEngine {
           const { error } = await supabase.from('pointages').insert(payload);
 
           if (!error) {
-            await db.pointages.update(pt.id, {
+            if (pt.id !== targetId) {
+              await db.pointages.delete(pt.id);
+            }
+            await db.pointages.put({
+              ...pt,
+              id: targetId,
               synced: true,
               error: null,
             });
@@ -207,6 +227,21 @@ class SyncEngine {
         .limit(200);
 
       if (!pointagesErr && remotePointages && remotePointages.length > 0) {
+        // Nettoyage automatique des anciens doublons locaux ("pt-...")
+        const allLocal = await db.pointages.toArray();
+        for (const localRow of allLocal) {
+          if (localRow.id.startsWith('pt-')) {
+            const hasDuplicateInRemote = remotePointages.some(
+              (rp) =>
+                rp.type === localRow.type &&
+                Math.abs(new Date(rp.horodatage).getTime() - new Date(localRow.horodatage).getTime()) < 5000
+            );
+            if (hasDuplicateInRemote) {
+              await db.pointages.delete(localRow.id);
+            }
+          }
+        }
+
         const mappedPointages: PointageLocal[] = remotePointages.map((pt) => ({
           id: pt.id,
           profile_id: pt.profile_id,
