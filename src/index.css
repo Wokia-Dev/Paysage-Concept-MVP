@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --color-foret: #15302F;
+  --color-sauge: #BFA98F;
+  --color-sable: #E8E3D9;
+  --color-craie: #FAFAFB;
+  --color-terracotta: #C47452;
+}
+
+body {
+  background-color: var(--color-craie);
+  color: var(--color-foret);
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* Utilitaires Safe-Area iOS et scrollbars masquées */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
