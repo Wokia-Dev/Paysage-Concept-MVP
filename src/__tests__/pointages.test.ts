@@ -263,7 +263,7 @@ describe('Declarative Pointages - Unit & Integration Tests', () => {
       assert.match(homeContent, /calculateNormalHours/);
       assert.match(homeContent, /Heures totales travaillées \(heures sup incluses\)/);
       assert.match(homeContent, /Dont heures supplémentaires/);
-      assert.match(homeContent, /Ventilation du temps de travail/);
+      assert.doesNotMatch(homeContent, /Ventilation du temps de travail/);
       assert.match(homeContent, /déjà incluses/);
     });
   });

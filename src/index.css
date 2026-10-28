@@ -2,10 +2,13 @@
 
 @theme {
   --color-foret: #15302F;
-  --color-sauge: #BFA98F;
+  --color-sauge: #8FA98F;
   --color-sable: #E8E3D9;
   --color-craie: #FAFAFB;
   --color-terracotta: #C47452;
+  --color-blanc: #FFFFFF;
+  --color-muted: #6B7280;
+  --shadow-soft: 0 4px 20px rgba(21, 48, 47, 0.06);
 }
 
 body {
@@ -26,6 +29,20 @@ body {
   padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
 }
 
+/* Ombre douce diffuse officielle */
+.shadow-soft {
+  box-shadow: 0 4px 20px rgba(21, 48, 47, 0.06);
+}
+
+/* Ergonomie extérieure : cible tactile minimale (48x48px) */
+.touch-target {
+  min-width: 48px;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -33,4 +50,48 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Animations Météo douces et naturelles */
+@keyframes weather-sun-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 1px rgba(245, 158, 11, 0.4));
+  }
+  50% {
+    transform: scale(1.12);
+    filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.8));
+  }
+}
+
+@keyframes weather-cloud-drift {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes weather-rain-drop {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translateY(2px);
+    opacity: 1;
+  }
+}
+
+.animate-weather-sun {
+  animation: weather-sun-pulse 3.5s ease-in-out infinite;
+}
+
+.animate-weather-cloud {
+  animation: weather-cloud-drift 4s ease-in-out infinite;
+}
+
+.animate-weather-rain {
+  animation: weather-rain-drop 1.8s ease-in-out infinite;
 }

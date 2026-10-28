@@ -56,6 +56,16 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function SupervisorRoute({ children }: { children: React.ReactNode }) {
+  const { profile } = useAuth();
+
+  if (profile?.role === 'ouvrier') {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -83,7 +93,14 @@ export default function App() {
             >
               <Route index element={<Home />} />
               <Route path="planning" element={<Planning />} />
-              <Route path="chantiers" element={<Chantiers />} />
+              <Route
+                path="chantiers"
+                element={
+                  <SupervisorRoute>
+                    <Chantiers />
+                  </SupervisorRoute>
+                }
+              />
               <Route path="chantier/:id" element={<ChantierDetail />} />
               <Route path="equipe" element={<Equipe />} />
               <Route path="chat" element={<ChatPreview />} />
