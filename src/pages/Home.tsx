@@ -2,17 +2,21 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/useAuth';
 import { db, getTodayDateString } from '../lib/db';
 import { syncEngine } from '../lib/sync';
-import { getQuickGeolocation } from '../lib/geolocation';
 import { fetchChantierWeather, type WeatherInfo } from '../lib/weather';
-import type { Chantier, PointageLocal, PointageType, Profile } from '../types/database';
+import {
+  formatHours,
+  validateDailyHours,
+  aggregateTeamDailyStatus,
+  calculateAutoOvertime,
+  calculateNormalHours,
+  getStoredDailyTarget,
+  setStoredDailyTarget,
+  type WorkerDailyStatus,
+} from '../lib/hours';
+import type { Chantier, PointageLocal } from '../types/database';
 import {
   MapPin,
   Clock,
-  Play,
-  Coffee,
-  LogOut,
-  LogIn,
-  RotateCcw,
   CheckCircle2,
   CloudUpload,
   ChevronRight,
@@ -25,48 +29,67 @@ import {
   AlertCircle,
   ShieldCheck,
   Briefcase,
+  Save,
+  Check,
+  Plus,
+  Minus,
+  Target,
+  Pencil,
+  Scale,
+  RotateCcw,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-interface TeamMemberStatus {
-  profile: Profile;
-  lastPointage?: PointageLocal;
-  status: 'en_poste' | 'en_pause' | 'parti' | 'non_pointe';
-  workedSeconds: number;
-  chantierName?: string;
-}
 
 export function Home() {
   const { profile } = useAuth();
   const [allChantiers, setAllChantiers] = useState<Chantier[]>([]);
   const [assignedChantiers, setAssignedChantiers] = useState<Chantier[]>([]);
   const [selectedChantier, setSelectedChantier] = useState<Chantier | null>(null);
-  const [todayPointages, setTodayPointages] = useState<PointageLocal[]>([]);
+  const [todayPointage, setTodayPointage] = useState<PointageLocal | null>(null);
   const [weather, setWeather] = useState<WeatherInfo | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [gpsStatusText, setGpsStatusText] = useState<string | null>(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Données de supervision pour chef d'équipe
-  const [teamStatuses, setTeamStatuses] = useState<TeamMemberStatus[]>([]);
+  // Objectif journalier paramétrable (persistance localStorage)
+  const [dailyTarget, setDailyTarget] = useState<number>(() =>
+    getStoredDailyTarget(profile?.id)
+  );
+  const [isEditingTarget, setIsEditingTarget] = useState(false);
+
+  // Champs de saisie déclarative
+  const [heuresTotales, setHeuresTotales] = useState<number>(7);
+  const [tempsPause, setTempsPause] = useState<number>(1);
+  const [heuresSup, setHeuresSup] = useState<number>(0);
+  const [isSupManuallyEdited, setIsSupManuallyEdited] = useState(false);
+  const [hasLoadedInitial, setHasLoadedInitial] = useState(false);
+
+  // Données de supervision pour chef d'équipe / admin
+  const [teamStatuses, setTeamStatuses] = useState<WorkerDailyStatus[]>([]);
+  const [teamSummary, setTeamSummary] = useState({
+    totalTeamHours: 0,
+    totalNormalHours: 0,
+    totalOvertime: 0,
+    totalPause: 0,
+    workersCount: 0,
+    submittedCount: 0,
+  });
 
   const todayStr = useMemo(() => getTodayDateString(0), []);
 
-  // Horloge en direct
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);  // Chargement des données du jour (chantiers, affectations et pointages)
   const refreshData = useCallback(async () => {
     if (!profile) return;
     try {
-      const [chantiersData, myAffsData, userPointagesData, allProfilesData, allPointagesData] =
+      const currentTarget = getStoredDailyTarget(profile.id);
+      setDailyTarget(currentTarget);
+
+      const [chantiersData, myAffsData, existingPt, allProfilesData, allTodayPts] =
         await Promise.all([
           db.chantiers.toArray(),
           db.affectations.where({ profile_id: profile.id, date_intervention: todayStr }).toArray(),
-          db.pointages.where('profile_id').equals(profile.id).toArray(),
+          db.pointages.where('[profile_id+date]').equals([profile.id, todayStr]).first(),
           db.profiles.toArray(),
-          db.pointages.toArray(),
+          db.pointages.where('date').equals(todayStr).toArray(),
         ]);
 
       setAllChantiers(chantiersData);
@@ -76,80 +99,52 @@ export function Home() {
       const myChantiers = chantiersData.filter((c) => myChantierIds.includes(c.id));
       setAssignedChantiers(myChantiers);
 
-      // Sélection automatique du chantier
-      if (profile.role === 'ouvrier') {
-        setSelectedChantier(myChantiers[0] || null);
+      // Pointage existant du jour pour l'utilisateur
+      setTodayPointage(existingPt || null);
+
+      // Pré-sélection du chantier
+      if (existingPt?.chantier_id) {
+        const matched = chantiersData.find((c) => c.id === existingPt.chantier_id);
+        if (matched) setSelectedChantier(matched);
+      } else if (profile.role === 'ouvrier') {
+        setSelectedChantier((prev) => prev || myChantiers[0] || null);
       } else {
-        // Chef d'équipe / admin : chantier affecté ou premier chantier actif
         const defaultCh = myChantiers[0] || chantiersData[0] || null;
         setSelectedChantier((prev) => prev || defaultCh);
       }
 
-      // Pointages personnels du jour (dédoublonnés pour éviter doublon local/distant)
-      const seenTimeKeys = new Set<string>();
-      const filtered = userPointagesData
-        .filter((pt) => pt.horodatage.startsWith(todayStr))
-        .sort((a, b) => new Date(a.horodatage).getTime() - new Date(b.horodatage).getTime())
-        .filter((pt) => {
-          const timeMinute = pt.horodatage.substring(0, 16); // Précision à la minute
-          const key = `${pt.type}-${timeMinute}`;
-          if (seenTimeKeys.has(key)) return false;
-          seenTimeKeys.add(key);
-          return true;
-        });
-      setTodayPointages(filtered);
+      // Pré-remplissage des champs du formulaire
+      if (existingPt) {
+        setHeuresTotales(Number(existingPt.heures_totales) || 0);
+        setTempsPause(Number(existingPt.temps_pause) || 0);
+        setHeuresSup(Number(existingPt.heures_sup) || 0);
+        setIsSupManuallyEdited(true); // Conserve les valeurs enregistrées sans écrasement
+      } else if (!hasLoadedInitial) {
+        setHeuresTotales(currentTarget);
+        setTempsPause(1);
+        setHeuresSup(calculateAutoOvertime(currentTarget, currentTarget));
+        setIsSupManuallyEdited(false);
+      }
+      setHasLoadedInitial(true);
 
-      // Pour les chefs d'équipe : calculer le statut de toute l'équipe
+      // Pour les chefs d'équipe et admins : calculer la synthèse de l'équipe
       if (profile.role === 'chef_equipe' || profile.role === 'admin') {
-        const workers = allProfilesData.filter((p) => p.id !== profile.id);
-        const statuses: TeamMemberStatus[] = workers.map((w) => {
-          const wPts = allPointagesData
-            .filter((pt) => pt.profile_id === w.id && pt.horodatage.startsWith(todayStr))
-            .sort((a, b) => new Date(a.horodatage).getTime() - new Date(b.horodatage).getTime());
-
-          const last = wPts[wPts.length - 1];
-          let status: TeamMemberStatus['status'] = 'non_pointe';
-          if (last) {
-            if (last.type === 'arrivee' || last.type === 'reprise') status = 'en_poste';
-            else if (last.type === 'pause') status = 'en_pause';
-            else if (last.type === 'depart') status = 'parti';
-          }
-
-          // Calcul des heures
-          let sec = 0;
-          let pStart: number | null = null;
-          wPts.forEach((pt) => {
-            const t = new Date(pt.horodatage).getTime();
-            if (pt.type === 'arrivee' || pt.type === 'reprise') pStart = t;
-            else if (pt.type === 'pause' || pt.type === 'depart') {
-              if (pStart !== null) {
-                sec += Math.max(0, Math.floor((t - pStart) / 1000));
-                pStart = null;
-              }
-            }
-          });
-          if (pStart !== null) {
-            sec += Math.max(0, Math.floor((Date.now() - pStart) / 1000));
-          }
-
-          const ch = last?.chantier_id
-            ? chantiersData.find((c) => c.id === last.chantier_id)
-            : undefined;
-
-          return {
-            profile: w,
-            lastPointage: last,
-            status,
-            workedSeconds: sec,
-            chantierName: ch?.nom_client,
-          };
+        const teamWorkers = allProfilesData.filter((p) => p.id !== profile.id);
+        const agg = aggregateTeamDailyStatus(allTodayPts, teamWorkers, todayStr);
+        setTeamStatuses(agg.statuses);
+        setTeamSummary({
+          totalTeamHours: agg.totalTeamHours,
+          totalNormalHours: agg.totalNormalHours,
+          totalOvertime: agg.totalOvertime,
+          totalPause: agg.totalPause,
+          workersCount: agg.workersCount,
+          submittedCount: agg.submittedCount,
         });
-        setTeamStatuses(statuses);
       }
     } catch (err) {
       console.error('Erreur chargement données Home:', err);
     }
-  }, [profile, todayStr]);
+  }, [profile, todayStr, hasLoadedInitial]);
 
   useEffect(() => {
     let isMounted = true;
@@ -180,73 +175,82 @@ export function Home() {
     }
   }, [selectedChantier]);
 
-  // Détermination du dernier pointage personnel
-  const lastPointage = todayPointages[todayPointages.length - 1];
-  const lastType: PointageType | null = lastPointage ? lastPointage.type : null;
-
-  // Calcul dynamique des heures travaillées (supporte pauses multiples)
-  const totalWorkedSeconds = useMemo(() => {
-    let seconds = 0;
-    let periodStart: number | null = null;
-
-    todayPointages.forEach((pt) => {
-      const time = new Date(pt.horodatage).getTime();
-      if (pt.type === 'arrivee' || pt.type === 'reprise') {
-        periodStart = time;
-      } else if (pt.type === 'pause' || pt.type === 'depart') {
-        if (periodStart !== null) {
-          seconds += Math.max(0, Math.floor((time - periodStart) / 1000));
-          periodStart = null;
-        }
-      }
-    });
-
-    // Si actuellement au travail (Arrivée ou Reprise en cours)
-    if (periodStart !== null) {
-      const now = currentTime.getTime();
-      seconds += Math.max(0, Math.floor((now - periodStart) / 1000));
+  // Validation en temps réel
+  const runValidation = (total: number, pause: number, sup: number): boolean => {
+    const res = validateDailyHours(total, pause, sup);
+    if (!res.valid) {
+      setValidationError(res.error || 'Saisie non valide');
+      return false;
     }
-
-    return seconds;
-  }, [todayPointages, currentTime]);
-
-  const formatHoursMinutes = (totalSec: number) => {
-    const hrs = Math.floor(totalSec / 3600);
-    const mins = Math.floor((totalSec % 3600) / 60);
-    return `${hrs}h${String(mins).padStart(2, '0')}`;
+    setValidationError(null);
+    return true;
   };
 
-  // Progression sur 8h
-  const progressPercent = Math.min(100, Math.round((totalWorkedSeconds / 28800) * 100));
+  const handleTargetChange = (newTarget: number) => {
+    const clamped = Math.max(1, Math.min(24, Math.round(newTarget * 100) / 100));
+    setDailyTarget(clamped);
+    setStoredDailyTarget(clamped, profile?.id);
 
-  // Exécution du pointage
-  const handlePointage = async (targetType: PointageType) => {
-    if (!profile || !selectedChantier || isProcessing) return;
+    // Si les heures sup n'ont pas été personnalisées manuellement, répercuter le nouvel objectif
+    if (!isSupManuallyEdited) {
+      const autoSup = calculateAutoOvertime(heuresTotales, clamped);
+      setHeuresSup(autoSup);
+      runValidation(heuresTotales, tempsPause, autoSup);
+    }
+  };
 
-    setIsProcessing(true);
-    setGpsStatusText('Recherche coordonnées GPS...');
+  const handleTotalChange = (val: number) => {
+    const clamped = Math.max(0, Math.min(24, Math.round(val * 100) / 100));
+    setHeuresTotales(clamped);
 
+    // Pré-sélection automatique des heures supplémentaires au-delà de l'objectif
+    const autoSup = calculateAutoOvertime(clamped, dailyTarget);
+    setHeuresSup(autoSup);
+    setIsSupManuallyEdited(false);
+
+    runValidation(clamped, tempsPause, autoSup);
+  };
+
+  const handlePauseChange = (val: number) => {
+    const clamped = Math.max(0, Math.min(24, Math.round(val * 100) / 100));
+    setTempsPause(clamped);
+    runValidation(heuresTotales, clamped, heuresSup);
+  };
+
+  const handleSupChange = (val: number) => {
+    const clamped = Math.max(0, Math.min(24, Math.round(val * 100) / 100));
+    setHeuresSup(clamped);
+    setIsSupManuallyEdited(true); // Saisie manuelle utilisateur prioritaire
+    runValidation(heuresTotales, tempsPause, clamped);
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!profile) return;
+
+    if (!runValidation(heuresTotales, tempsPause, heuresSup)) {
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      const geo = await getQuickGeolocation(2500);
-      setGpsStatusText(geo.latitude ? 'Position GPS validée' : 'Enregistré (GPS hors portée)');
-
-      await syncEngine.addPointage({
+      await syncEngine.saveDailyPointage({
         profile_id: profile.id,
-        chantier_id: selectedChantier.id,
-        type: targetType,
-        horodatage: new Date().toISOString(),
-        latitude: geo.latitude,
-        longitude: geo.longitude,
+        chantier_id: selectedChantier?.id || null,
+        date: todayStr,
+        heures_totales: heuresTotales,
+        temps_pause: tempsPause,
+        heures_sup: heuresSup,
       });
 
+      setSubmitSuccess(true);
+      setTimeout(() => setSubmitSuccess(false), 3000);
       await refreshData();
     } catch (err) {
-      console.error('Erreur lors du pointage:', err);
+      console.error('Erreur enregistrement heures:', err);
+      setValidationError('Erreur lors de la sauvegarde locale');
     } finally {
-      setTimeout(() => {
-        setIsProcessing(false);
-        setGpsStatusText(null);
-      }, 500);
+      setIsSubmitting(false);
     }
   };
 
@@ -254,7 +258,14 @@ export function Home() {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-  }).format(currentTime);
+  }).format(new Date());
+
+  // Progression et calculs d'heures (objectif paramétrable & sup incluses)
+  const activeHours = todayPointage ? Number(todayPointage.heures_totales) || 0 : heuresTotales;
+  const activeSup = todayPointage ? Number(todayPointage.heures_sup) || 0 : heuresSup;
+  const activePause = todayPointage ? Number(todayPointage.temps_pause) || 0 : tempsPause;
+  const activeNormal = calculateNormalHours(activeHours, activeSup);
+  const progressPercent = Math.min(100, Math.round((activeHours / dailyTarget) * 100));
 
   // Chantiers sélectionnables : strict pour ouvrier (uniquement ses affectations)
   const availableChantiers = profile?.role === 'ouvrier' ? assignedChantiers : allChantiers;
@@ -274,7 +285,7 @@ export function Home() {
 
         {weather && (
           <div className="flex items-center gap-2 bg-craie px-3 py-2 rounded-xl border border-sable/60">
-            {weather.iconName === 'sun' && <Sun className="w-5 h-5 text-amber-500 animate-spin-slow" />}
+            {weather.iconName === 'sun' && <Sun className="w-5 h-5 text-amber-500" />}
             {weather.iconName === 'cloud' && <Cloud className="w-5 h-5 text-slate-500" />}
             {weather.iconName === 'cloud-rain' && <CloudRain className="w-5 h-5 text-blue-500" />}
             <div className="text-right">
@@ -308,12 +319,11 @@ export function Home() {
               Aucun chantier ne vous est affecté aujourd'hui.
             </p>
             <p className="text-[11px] text-amber-700">
-              Veuillez contacter votre chef d'équipe pour être assigné à une mission.
+              Vous pouvez néanmoins enregistrer vos heures ou sélectionner un chantier si autorisé.
             </p>
           </div>
         ) : (
           <>
-            {/* Si plusieurs chantiers affectés, sélecteur rapide */}
             {availableChantiers.length > 1 ? (
               <div className="relative">
                 <select
@@ -368,7 +378,7 @@ export function Home() {
         )}
       </div>
 
-      {/* 3. Compteur d'heures dynamiques du jour (Objectif 8h) */}
+      {/* 3. Statut journalier & Objectif paramétrable */}
       <div className="bg-foret text-sable rounded-2xl p-4 shadow-md space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -377,19 +387,100 @@ export function Home() {
             </div>
             <div>
               <span className="text-[11px] text-sable/70 uppercase tracking-wider block leading-none">
-                Cumul de la journée
+                Cumul du jour
               </span>
               <span className="text-xl font-extrabold text-white">
-                {formatHoursMinutes(totalWorkedSeconds)}
+                {formatHours(activeHours)}
               </span>
             </div>
           </div>
 
           <div className="text-right">
-            <span className="text-[11px] text-sable/70 block">Objectif</span>
-            <span className="text-sm font-bold text-sable">8h00 ({progressPercent}%)</span>
+            <div className="flex items-center justify-end gap-1.5">
+              <span className="text-[11px] text-sable/70">Objectif</span>
+              <button
+                type="button"
+                onClick={() => setIsEditingTarget((prev) => !prev)}
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/15 hover:bg-white/25 text-sable transition-colors cursor-pointer flex items-center gap-1"
+                title="Modifier l'objectif journalier d'heures"
+                aria-label="Modifier l'objectif journalier"
+              >
+                <Pencil className="w-2.5 h-2.5 text-terracotta" />
+                <span>{isEditingTarget ? 'Fermer' : 'Modifier'}</span>
+              </button>
+            </div>
+            <span className="text-sm font-bold text-sable">
+              {formatHours(dailyTarget)} ({progressPercent}%)
+            </span>
           </div>
         </div>
+
+        {/* Panneau d'ajustement inline de l'objectif journalier */}
+        {isEditingTarget && (
+          <div className="p-3 bg-white/10 backdrop-blur-xs rounded-xl border border-white/15 text-xs text-sable space-y-2 animate-in fade-in duration-150">
+            <div className="flex items-center justify-between">
+              <span className="font-bold flex items-center gap-1.5 text-white">
+                <Target className="w-3.5 h-3.5 text-terracotta" />
+                Objectif journalier de référence :
+              </span>
+              <span className="font-extrabold text-amber-300 text-sm">
+                {formatHours(dailyTarget)} / jour
+              </span>
+            </div>
+            <p className="text-[11px] text-sable/80 leading-tight">
+              Toute heure saisie au-delà de cet objectif sera automatiquement pré-sélectionnée comme heure supplémentaire (dont sup).
+            </p>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleTargetChange(dailyTarget - 0.5)}
+                  className="w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 flex items-center justify-center text-white cursor-pointer"
+                  aria-label="Diminuer objectif"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <span className="px-2 font-extrabold text-white text-xs">
+                  {formatHours(dailyTarget)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleTargetChange(dailyTarget + 0.5)}
+                  className="w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 flex items-center justify-center text-white cursor-pointer"
+                  aria-label="Augmenter objectif"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1">
+                {[7, 7.5, 8, 8.5].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => handleTargetChange(preset)}
+                    className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-colors cursor-pointer ${
+                      dailyTarget === preset
+                        ? 'bg-terracotta text-white border-terracotta'
+                        : 'bg-white/10 text-sable border-white/15 hover:bg-white/20'
+                    }`}
+                  >
+                    {formatHours(preset)}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsEditingTarget(false)}
+                className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-white text-foret hover:bg-sable transition-colors cursor-pointer ml-auto"
+              >
+                Valider
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Barre de progression */}
         <div className="w-full bg-white/15 h-2.5 rounded-full overflow-hidden">
@@ -399,121 +490,329 @@ export function Home() {
           />
         </div>
 
-        {lastType && (
-          <div className="text-[11px] text-sable/80 flex items-center justify-between pt-0.5">
-            <span>État actuel :</span>
-            <span className="font-semibold text-white uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded-md">
-              {(lastType === 'arrivee' || lastType === 'reprise') && '🟢 Au travail'}
-              {lastType === 'pause' && '☕ En pause'}
-              {lastType === 'depart' && '🏁 Journée terminée'}
-            </span>
-          </div>
-        )}
+        {/* État déclaratif & ventilation explicite (heures sup incluses) */}
+        <div className="text-[11px] text-sable/80 flex flex-wrap items-center justify-between gap-1 pt-0.5">
+          <span className="flex items-center gap-1">
+            {todayPointage ? (
+              <span className="text-emerald-300 font-semibold flex items-center gap-1">
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                Déclaré aujourd'hui
+              </span>
+            ) : (
+              <span className="text-amber-200 font-medium">En attente de déclaration</span>
+            )}
+          </span>
+          <span className="font-semibold text-white/90">
+            {formatHours(activeNormal)} norm. + {formatHours(activeSup)} sup = {formatHours(activeHours)} total
+            {activePause > 0 && ` • Pause : ${formatHours(activePause)}`}
+          </span>
+        </div>
       </div>
 
-      {/* 4. Moteur de pointage contextuel & souple (pauses multiples et départ direct) */}
-      <div className="space-y-2.5">
-        {/* Horloge précise en direct pour le pointage */}
-        <div className="flex items-center justify-between px-3 py-2 bg-white rounded-xl border border-sable/90 shadow-2xs">
-          <div className="flex items-center gap-1.5 text-xs text-foret/75 font-semibold">
-            <Clock className="w-3.5 h-3.5 text-terracotta" />
-            <span>Heure actuelle</span>
+      {/* 4. Formulaire déclaratif journalier (Heures totales, Pause, Heures sup) */}
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-2xl p-4 border border-sable/90 shadow-sm space-y-4"
+      >
+        <div className="flex items-center justify-between border-b border-sable/50 pb-3">
+          <div>
+            <h2 className="text-sm font-extrabold text-foret flex items-center gap-2">
+              <Clock className="w-4 h-4 text-terracotta" />
+              Déclaration des heures du jour
+            </h2>
+            <p className="text-[11px] text-sauge">
+              Modifiable à tout moment de la journée (sauvegarde instantanée)
+            </p>
           </div>
-          <div className="font-mono text-sm font-extrabold text-foret tracking-wider bg-craie px-2.5 py-0.5 rounded-lg border border-sable flex items-center gap-1">
-            <span>
-              {currentTime.toLocaleTimeString('fr-FR', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-              })}
+          {todayPointage && (
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                todayPointage.synced
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : 'bg-amber-100 text-amber-800'
+              }`}
+            >
+              {todayPointage.synced ? (
+                <>
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  Synchronisé
+                </>
+              ) : (
+                <>
+                  <CloudUpload className="w-3 h-3 text-amber-600 animate-pulse" />
+                  En attente synchro
+                </>
+              )}
             </span>
+          )}
+        </div>
+
+        {/* Message d'erreur de validation */}
+        {validationError && (
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <span>{validationError}</span>
+          </div>
+        )}
+
+        {/* Message de succès */}
+        {submitSuccess && (
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span className="font-bold">Vos heures ont été enregistrées avec succès !</span>
+          </div>
+        )}
+
+        {/* Champ 1 : Heures totales */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label htmlFor="input-heures-totales" className="text-xs font-bold text-foret">
+              Heures totales travaillées (heures sup incluses) :{' '}
+              <span className="text-terracotta">{formatHours(heuresTotales)}</span>
+            </label>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handleTotalChange(heuresTotales - 0.5)}
+                className="w-7 h-7 rounded-lg bg-craie hover:bg-sable/50 border border-sable flex items-center justify-center text-foret cursor-pointer"
+                aria-label="Diminuer heures totales"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTotalChange(heuresTotales + 0.5)}
+                className="w-7 h-7 rounded-lg bg-craie hover:bg-sable/50 border border-sable flex items-center justify-center text-foret cursor-pointer"
+                aria-label="Augmenter heures totales"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+          <input
+            id="input-heures-totales"
+            type="number"
+            step="0.25"
+            min="0"
+            max="24"
+            value={heuresTotales}
+            onChange={(e) => handleTotalChange(parseFloat(e.target.value) || 0)}
+            className="w-full text-base font-extrabold text-foret bg-craie rounded-xl p-2.5 border border-sable focus:outline-none focus:ring-2 focus:ring-foret/20"
+          />
+          <p className="text-[10px] text-sauge">
+            Total de votre temps travaillé dans la journée. Vos heures supplémentaires sont comprises dans ce chiffre.
+          </p>
+          {/* Boutons rapides pour heures totales */}
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {[7, 7.5, 8, 8.5, 9].map((val) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => handleTotalChange(val)}
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                  heuresTotales === val
+                    ? 'bg-foret text-white border-foret'
+                    : 'bg-craie text-foret/80 border-sable hover:bg-sable/50'
+                }`}
+              >
+                {formatHours(val)}
+              </button>
+            ))}
           </div>
         </div>
 
-        {gpsStatusText && (
-          <p className="text-center text-xs font-semibold text-terracotta animate-pulse">
-            {gpsStatusText}
-          </p>
-        )}
-
-        {/* Cas 1 : Journée non commencée ou relance après départ */}
-        {(!lastPointage || lastType === 'depart') && (
-          <button
-            type="button"
-            onClick={() => handlePointage('arrivee')}
-            disabled={isProcessing || !selectedChantier}
-            className="w-full py-4 px-5 rounded-2xl font-bold flex flex-col items-center justify-center gap-1 shadow-lg transition-all active:scale-97 cursor-pointer disabled:opacity-50 bg-terracotta hover:bg-terracotta/90 text-white shadow-terracotta/25"
-          >
-            <div className="flex items-center gap-2 text-base">
-              <LogIn className={`w-5 h-5 ${isProcessing ? 'animate-bounce' : ''}`} />
-              <span>Pointer mon Arrivée</span>
+        {/* Champ 2 : Temps de pause */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label htmlFor="input-temps-pause" className="text-xs font-bold text-foret">
+              Durée de pause / déjeuner : <span className="text-terracotta">{formatHours(tempsPause)}</span>
+            </label>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handlePauseChange(tempsPause - 0.25)}
+                className="w-7 h-7 rounded-lg bg-craie hover:bg-sable/50 border border-sable flex items-center justify-center text-foret cursor-pointer"
+                aria-label="Diminuer pause"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePauseChange(tempsPause + 0.25)}
+                className="w-7 h-7 rounded-lg bg-craie hover:bg-sable/50 border border-sable flex items-center justify-center text-foret cursor-pointer"
+                aria-label="Augmenter pause"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <span className="text-xs opacity-85 font-normal">
-              {selectedChantier
-                ? `Prise de poste : ${selectedChantier.nom_client.substring(0, 24)}...`
-                : 'Sélectionnez un chantier'}
-            </span>
-          </button>
-        )}
-
-        {/* Cas 2 : Actuellement au travail (Arrivée ou Reprise) -> Deux choix possibles ! */}
-        {(lastType === 'arrivee' || lastType === 'reprise') && (
-          <div className="space-y-2">
-            {/* Action A : Prendre une pause (Pause café, déjeuner, pause de l'après-midi...) */}
-            <button
-              type="button"
-              onClick={() => handlePointage('pause')}
-              disabled={isProcessing}
-              className="w-full py-3.5 px-4 bg-foret hover:bg-foret/90 text-sable font-bold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-md transition-all active:scale-97 cursor-pointer disabled:opacity-50"
-            >
-              <Coffee className="w-5 h-5 text-terracotta" />
-              <span>Prendre une Pause</span>
-            </button>
-
-            {/* Action B : Fin de journée directe (sans pause obligatoire !) */}
-            <button
-              type="button"
-              onClick={() => handlePointage('depart')}
-              disabled={isProcessing}
-              className="w-full py-3 px-4 bg-amber-700/90 hover:bg-amber-800 active:scale-97 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Fin de journée (Départ)</span>
-            </button>
           </div>
-        )}
+          <input
+            id="input-temps-pause"
+            type="number"
+            step="0.25"
+            min="0"
+            max="24"
+            value={tempsPause}
+            onChange={(e) => handlePauseChange(parseFloat(e.target.value) || 0)}
+            className="w-full text-base font-extrabold text-foret bg-craie rounded-xl p-2.5 border border-sable focus:outline-none focus:ring-2 focus:ring-foret/20"
+          />
+          <p className="text-[10px] text-sauge">
+            Pause repas ou coupure non travaillée (déduite des heures nettes).
+          </p>
+          {/* Boutons rapides pour pause */}
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {[
+              { label: 'Sans pause', val: 0 },
+              { label: '30 min', val: 0.5 },
+              { label: '45 min', val: 0.75 },
+              { label: '1h00', val: 1 },
+            ].map((p) => (
+              <button
+                key={p.val}
+                type="button"
+                onClick={() => handlePauseChange(p.val)}
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                  tempsPause === p.val
+                    ? 'bg-foret text-white border-foret'
+                    : 'bg-craie text-foret/80 border-sable hover:bg-sable/50'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        {/* Cas 3 : Actuellement en pause -> Reprendre le travail */}
-        {lastType === 'pause' && (
-          <button
-            type="button"
-            onClick={() => handlePointage('reprise')}
-            disabled={isProcessing}
-            className="w-full py-4 px-5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-base rounded-2xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-emerald-700/25 transition-all active:scale-97 cursor-pointer disabled:opacity-50"
-          >
-            <div className="flex items-center gap-2">
-              <Play className="w-5 h-5" />
-              <span>Reprendre le Travail</span>
+        {/* Champ 3 : Heures supplémentaires */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label htmlFor="input-heures-sup" className="text-xs font-bold text-foret">
+              Dont heures supplémentaires (incluses) :{' '}
+              <span className="text-terracotta">{formatHours(heuresSup)}</span>
+            </label>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handleSupChange(heuresSup - 0.5)}
+                className="w-7 h-7 rounded-lg bg-craie hover:bg-sable/50 border border-sable flex items-center justify-center text-foret cursor-pointer"
+                aria-label="Diminuer heures sup"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSupChange(heuresSup + 0.5)}
+                className="w-7 h-7 rounded-lg bg-craie hover:bg-sable/50 border border-sable flex items-center justify-center text-foret cursor-pointer"
+                aria-label="Augmenter heures sup"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <span className="text-xs opacity-85 font-normal">Fin de la pause en cours</span>
-          </button>
-        )}
+          </div>
+          <input
+            id="input-heures-sup"
+            type="number"
+            step="0.25"
+            min="0"
+            max="24"
+            value={heuresSup}
+            onChange={(e) => handleSupChange(parseFloat(e.target.value) || 0)}
+            className="w-full text-base font-extrabold text-foret bg-craie rounded-xl p-2.5 border border-sable focus:outline-none focus:ring-2 focus:ring-foret/20"
+          />
+          <div className="flex items-center justify-between text-[10px] text-sauge">
+            <span>
+              Part incluse dans les {formatHours(heuresTotales)} totales (auto au-delà de {formatHours(dailyTarget)}).
+            </span>
+            {isSupManuallyEdited ? (
+              <span className="text-amber-700 font-semibold">(Saisie manuelle)</span>
+            ) : (
+              <span className="text-emerald-700 font-semibold">(Pré-sélection auto)</span>
+            )}
+          </div>
+          {/* Boutons rapides pour heures sup */}
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {[0, 0.5, 1, 1.5, 2].map((val) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => handleSupChange(val)}
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                  heuresSup === val
+                    ? 'bg-foret text-white border-foret'
+                    : 'bg-craie text-foret/80 border-sable hover:bg-sable/50'
+                }`}
+              >
+                {val === 0 ? '0h (Aucune)' : `+${formatHours(val)}`}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        {/* Si journée clôturée, proposer le redémarrage pour un autre chantier */}
-        {lastType === 'depart' && (
-          <button
-            type="button"
-            onClick={() => handlePointage('arrivee')}
-            disabled={isProcessing}
-            className="w-full py-2.5 px-3 bg-craie hover:bg-sable/50 border border-sable text-foret font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5 text-terracotta" />
-            <span>Nouveau pointage / intervention (Multi-chantier)</span>
-          </button>
-        )}
-      </div>
+        {/* Carte de ventilation en temps réel */}
+        <div className="p-3.5 bg-craie rounded-xl border border-sable/80 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-foret uppercase tracking-wider flex items-center gap-1.5">
+              <Scale className="w-3.5 h-3.5 text-terracotta" />
+              Ventilation du temps de travail
+            </span>
+            {isSupManuallyEdited && (
+              <button
+                type="button"
+                onClick={() => {
+                  const autoSup = calculateAutoOvertime(heuresTotales, dailyTarget);
+                  setHeuresSup(autoSup);
+                  setIsSupManuallyEdited(false);
+                  runValidation(heuresTotales, tempsPause, autoSup);
+                }}
+                className="text-[10px] font-bold text-terracotta hover:underline cursor-pointer flex items-center gap-1"
+                title="Rétablir la pré-sélection basée sur l'objectif"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Réaligner sur objectif ({formatHours(calculateAutoOvertime(heuresTotales, dailyTarget))} sup)</span>
+              </button>
+            )}
+          </div>
 
-      {/* 5. Espace Superviseur : Suivi des pointages de l'équipe (visible uniquement pour Chef d'équipe & Admin) */}
+          <div className="p-3 bg-white rounded-xl border border-sable/70 space-y-1.5 shadow-2xs">
+            <div className="flex flex-wrap items-center gap-1.5 text-xs">
+              <span className="font-extrabold text-sm text-foret bg-sable/40 px-2 py-0.5 rounded-lg">
+                {formatHours(heuresTotales)} travaillées au total
+              </span>
+              <span className="text-sauge font-bold">=</span>
+              <span className="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                {formatHours(calculateNormalHours(heuresTotales, heuresSup))} normales
+              </span>
+              <span className="text-sauge font-bold">+</span>
+              <span className="font-bold text-terracotta bg-terracotta/10 px-2 py-0.5 rounded-lg border border-terracotta/20">
+                {formatHours(heuresSup)} {heuresSup > 1 ? 'supplémentaires' : 'supplémentaire'}
+              </span>
+            </div>
+
+            <p className="text-[11px] text-sauge leading-relaxed pt-0.5">
+              💡 <strong>Rappel :</strong> les {formatHours(heuresSup)} sup sont <u>déjà incluses</u> dans les {formatHours(heuresTotales)} totales (elles ne s'y ajoutent pas).
+              {tempsPause > 0 && ` • Pause déduite : ${formatHours(tempsPause)}.`}
+            </p>
+          </div>
+        </div>
+
+        {/* Bouton de soumission */}
+        <button
+          type="submit"
+          disabled={isSubmitting || Boolean(validationError)}
+          className="w-full py-3.5 px-4 bg-terracotta hover:bg-terracotta/90 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md shadow-terracotta/20 transition-all active:scale-98 cursor-pointer disabled:opacity-50"
+        >
+          <Save className="w-4 h-4" />
+          <span>
+            {isSubmitting
+              ? 'Enregistrement en cours...'
+              : todayPointage
+              ? 'Mettre à jour mes heures'
+              : 'Enregistrer mes heures'}
+          </span>
+        </button>
+      </form>
+
+      {/* 5. Espace Superviseur : Suivi des pointages de l'équipe (Chef d'équipe & Admin) */}
       {(profile?.role === 'chef_equipe' || profile?.role === 'admin') && (
         <div className="bg-white rounded-2xl p-4 border border-sable/80 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
@@ -521,48 +820,77 @@ export function Home() {
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
               Suivi de l'équipe (Aujourd'hui)
             </span>
-            <span className="text-xs text-foret/60">{teamStatuses.length} ouvrier(s)</span>
+            <span className="text-xs text-foret/60">
+              {teamSummary.submittedCount} / {teamSummary.workersCount} déclarés
+            </span>
           </div>
 
-          <div className="divide-y divide-sable/50">
-            {teamStatuses.map((m) => (
-              <div key={m.profile.id} className="py-2.5 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-foret text-sable font-bold text-xs flex items-center justify-center">
-                    {m.profile.prenom.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="font-bold text-foret">
-                      {m.profile.prenom} {m.profile.nom}
-                    </p>
-                    <p className="text-[10px] text-foret/60 truncate max-w-[150px]">
-                      {m.chantierName || 'Aucun chantier'}
-                    </p>
-                  </div>
-                </div>
+          {/* Synthèse globale équipe */}
+          <div className="grid grid-cols-2 gap-2 bg-craie p-3 rounded-xl border border-sable/60 text-xs">
+            <div>
+              <span className="text-[10px] text-sauge font-medium block">Total heures équipe :</span>
+              <span className="text-base font-extrabold text-foret">
+                {formatHours(teamSummary.totalTeamHours)}
+              </span>
+              <span className="text-[10px] text-sauge font-medium block">
+                ({formatHours(teamSummary.totalNormalHours)} norm. + {formatHours(teamSummary.totalOvertime)} sup)
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] text-sauge font-medium block">Dont heures sup :</span>
+              <span className="text-base font-extrabold text-terracotta">
+                {formatHours(teamSummary.totalOvertime)}
+              </span>
+              <span className="text-[10px] text-sauge font-medium block">
+                Incluses dans le total
+              </span>
+            </div>
+          </div>
 
-                <div className="text-right space-y-0.5">
-                  <span
-                    className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${m.status === 'en_poste'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : m.status === 'en_pause'
-                          ? 'bg-amber-100 text-amber-800'
-                          : m.status === 'parti'
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-sable/60 text-foret/60'
+          {/* Liste détaillée des ouvriers */}
+          <div className="divide-y divide-sable/50">
+            {teamStatuses.map((m) => {
+              const matchedChantier = m.chantierId
+                ? allChantiers.find((c) => c.id === m.chantierId)
+                : undefined;
+
+              return (
+                <div key={m.profile.id} className="py-2.5 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-foret text-sable font-bold text-xs flex items-center justify-center">
+                      {m.profile.prenom.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-bold text-foret">
+                        {m.profile.prenom} {m.profile.nom}
+                      </p>
+                      <p className="text-[10px] text-foret/60 truncate max-w-[150px]">
+                        {matchedChantier?.nom_client || 'Aucun chantier'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right space-y-0.5">
+                    <span
+                      className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        m.hasSubmitted
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-sable/60 text-foret/60'
                       }`}
-                  >
-                    {m.status === 'en_poste' && '🟢 Au travail'}
-                    {m.status === 'en_pause' && '☕ En pause'}
-                    {m.status === 'parti' && '🏁 Parti'}
-                    {m.status === 'non_pointe' && '⚪ Non pointé'}
-                  </span>
-                  <p className="text-[10px] font-semibold text-foret/70">
-                    {formatHoursMinutes(m.workedSeconds)}
-                  </p>
+                    >
+                      {m.hasSubmitted
+                        ? `🟢 ${formatHours(m.heuresTotales)} au total`
+                        : '⚪ Non déclaré'}
+                    </span>
+                    {m.hasSubmitted && (
+                      <p className="text-[10px] font-semibold text-foret/70">
+                        {formatHours(calculateNormalHours(m.heuresTotales, m.heuresSup))} norm. + {formatHours(m.heuresSup)} sup
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -589,81 +917,111 @@ export function Home() {
         </div>
       )}
 
-      {/* 6. Récapitulatif chronologique des pointages du jour */}
+      {/* 6. Récapitulatif de ma déclaration journalière */}
       <div className="bg-white rounded-2xl p-4 border border-sable/80 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-bold uppercase tracking-wider text-sauge flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-foret" />
-            Mes pointages du jour
+            Ma déclaration du jour
           </h2>
-          <span className="text-xs text-foret/60">{todayPointages.length} saisie(s)</span>
+          {todayPointage && (
+            <span className="text-xs text-foret/60">
+              {todayPointage.updated_at
+                ? `Màj à ${new Date(todayPointage.updated_at).toLocaleTimeString('fr-FR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}`
+                : 'Aujourd’hui'}
+            </span>
+          )}
         </div>
 
-        {todayPointages.length === 0 ? (
+        {!todayPointage ? (
           <div className="text-center py-6 text-xs text-foret/50 space-y-1">
             <AlertCircle className="w-6 h-6 mx-auto text-sauge/60" />
-            <p>Aucun pointage enregistré aujourd'hui.</p>
+            <p>Aucune heure enregistrée aujourd'hui.</p>
             <p className="text-[11px] text-sauge">
-              Appuyez sur "Pointer mon Arrivée" dès votre prise de poste.
+              Complétez le formulaire ci-dessus pour déclarer vos heures travaillées.
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {todayPointages.map((pt) => {
-              const timeStr = new Date(pt.horodatage).toLocaleTimeString('fr-FR', {
-                hour: '2-digit',
-                minute: '2-digit',
-              });
+          <div className="p-3 bg-craie rounded-xl border border-sable/60 space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-sauge font-bold uppercase block">
+                  Heures totales déclarées
+                </span>
+                <span className="text-lg font-extrabold text-foret">
+                  {formatHours(Number(todayPointage.heures_totales) || 0)}
+                </span>
+                <span className="text-[11px] text-sauge block">
+                  (dont {formatHours(Number(todayPointage.heures_sup) || 0)} supplémentaires)
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] text-sauge font-bold uppercase block">
+                  Statut synchro
+                </span>
+                {todayPointage.synced ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    Synchronisé
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700">
+                    <CloudUpload className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                    En attente de réseau
+                  </span>
+                )}
+              </div>
+            </div>
 
-              const getBadge = (t: PointageType) => {
-                switch (t) {
-                  case 'arrivee':
-                    return { label: 'Arrivée', color: 'bg-emerald-100 text-emerald-800' };
-                  case 'pause':
-                    return { label: 'Pause', color: 'bg-amber-100 text-amber-800' };
-                  case 'reprise':
-                    return { label: 'Reprise', color: 'bg-sky-100 text-sky-800' };
-                  case 'depart':
-                    return { label: 'Départ', color: 'bg-rose-100 text-rose-800' };
-                }
-              };
+            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-sable/40 text-xs">
+              <div>
+                <span className="text-[10px] text-sauge font-medium">Heures normales :</span>
+                <p className="font-bold text-foret">
+                  {formatHours(
+                    calculateNormalHours(
+                      Number(todayPointage.heures_totales) || 0,
+                      Number(todayPointage.heures_sup) || 0
+                    )
+                  )}
+                </p>
+              </div>
+              <div>
+                <span className="text-[10px] text-sauge font-medium">Dont heures sup :</span>
+                <p className="font-bold text-terracotta">
+                  {formatHours(Number(todayPointage.heures_sup) || 0)}
+                </p>
+              </div>
+              <div>
+                <span className="text-[10px] text-sauge font-medium">Temps de pause :</span>
+                <p className="font-bold text-foret">
+                  {formatHours(Number(todayPointage.temps_pause) || 0)}
+                </p>
+              </div>
+            </div>
 
-              const badge = getBadge(pt.type);
-
-              return (
-                <div
-                  key={pt.id}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-craie border border-sable/50 text-xs"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${badge.color}`}>
-                      {badge.label}
-                    </span>
-                    <span className="font-bold text-foret">{timeStr}</span>
-                    {pt.latitude && (
-                      <span className="text-[10px] text-sauge flex items-center gap-0.5">
-                        <MapPin className="w-2.5 h-2.5 text-terracotta" />
-                        GPS
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    {pt.synced ? (
-                      <span className="flex items-center gap-1 text-[11px] text-emerald-700 font-medium">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span className="hidden xs:inline">Synchro</span>
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-[11px] text-amber-700 font-medium">
-                        <CloudUpload className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                        <span>En attente</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            <div className="p-2.5 bg-white rounded-lg border border-sable/50 text-[11px] text-foret font-medium text-center shadow-2xs">
+              💡 Détail du jour :{' '}
+              <span className="font-bold text-emerald-800">
+                {formatHours(
+                  calculateNormalHours(
+                    Number(todayPointage.heures_totales) || 0,
+                    Number(todayPointage.heures_sup) || 0
+                  )
+                )}
+              </span>{' '}
+              normales +{' '}
+              <span className="font-bold text-terracotta">
+                {formatHours(Number(todayPointage.heures_sup) || 0)}
+              </span>{' '}
+              sup ={' '}
+              <span className="font-extrabold text-foret">
+                {formatHours(Number(todayPointage.heures_totales) || 0)}
+              </span>{' '}
+              au total
+            </div>
           </div>
         )}
       </div>

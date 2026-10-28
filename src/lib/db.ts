@@ -15,6 +15,17 @@ export class PaysageDatabase extends Dexie {
       affectations: 'id, chantier_id, profile_id, date_intervention',
       profiles: 'id, role',
     });
+
+    this.version(2)
+      .stores({
+        pointages: 'id, profile_id, chantier_id, date, [profile_id+date], synchronise_le, synced',
+        chantiers: 'id, statut',
+        affectations: 'id, chantier_id, profile_id, date_intervention',
+        profiles: 'id, role',
+      })
+      .upgrade(async (tx) => {
+        await tx.table('pointages').clear();
+      });
   }
 }
 

@@ -2,8 +2,6 @@ export type UserRole = 'admin' | 'chef_equipe' | 'ouvrier';
 
 export type ChantierStatut = 'en_attente' | 'en_cours' | 'termine';
 
-export type PointageType = 'arrivee' | 'pause' | 'reprise' | 'depart';
-
 export type ConversationType = 'general' | 'chantier' | 'direction';
 
 export interface Profile {
@@ -43,22 +41,27 @@ export interface Affectation {
 export interface Pointage {
   id: string;
   profile_id: string;
-  chantier_id: string;
-  type: PointageType;
-  horodatage: string; // ISO 8601
-  latitude?: number | null;
-  longitude?: number | null;
+  chantier_id?: string | null;
+  date: string; // Format YYYY-MM-DD
+  heures_totales: number;
+  temps_pause: number;
+  heures_sup: number;
   synchronise_le?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface PointageLocal {
   id: string;
   profile_id: string;
-  chantier_id: string;
-  type: PointageType;
-  horodatage: string; // ISO 8601
-  latitude?: number | null;
-  longitude?: number | null;
+  chantier_id?: string | null;
+  date: string; // Format YYYY-MM-DD
+  heures_totales: number;
+  temps_pause: number;
+  heures_sup: number;
+  synchronise_le?: string | null;
   synced: boolean;
   error?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }

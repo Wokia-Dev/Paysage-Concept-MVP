@@ -12,6 +12,15 @@ export interface SyncResult {
   requiresRealAuth?: boolean;
 }
 
+export interface SaveDailyPointageInput {
+  profile_id: string;
+  chantier_id?: string | null;
+  date: string; // Format YYYY-MM-DD
+  heures_totales: number;
+  temps_pause: number;
+  heures_sup: number;
+}
+
 function generateUUID(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -56,24 +65,39 @@ class SyncEngine {
   }
 
   /**
-   * Enregistre un pointage dans Dexie immédiatement (zéro latence)
-   * avec un UUID strict compatible PostgreSQL/Supabase, puis déclenche la synchro.
+   * Enregistre ou met à jour la déclaration d'heures journalière dans Dexie.
+   * Utilise l'index composé [profile_id+date] pour éviter tout doublon local.
+   * Conserve l'ID existant lors d'une mise à jour pour garantir l'idempotence.
    */
-  public async addPointage(
-    data: Omit<PointageLocal, 'id' | 'synced'>
-  ): Promise<PointageLocal> {
-    const localId = generateUUID();
+  public async saveDailyPointage(data: SaveDailyPointageInput): Promise<PointageLocal> {
+    const existing = await db.pointages
+      .where('[profile_id+date]')
+      .equals([data.profile_id, data.date])
+      .first();
+
+    const now = new Date().toISOString();
+    const pointageId = existing ? existing.id : generateUUID();
+
     const pointage: PointageLocal = {
-      ...data,
-      id: localId,
+      id: pointageId,
+      profile_id: data.profile_id,
+      chantier_id: data.chantier_id ?? null,
+      date: data.date,
+      heures_totales: Number(data.heures_totales) || 0,
+      temps_pause: Number(data.temps_pause) || 0,
+      heures_sup: Number(data.heures_sup) || 0,
+      synchronise_le: existing?.synchronise_le ?? null,
       synced: false,
+      error: null,
+      created_at: existing?.created_at ?? now,
+      updated_at: now,
     };
 
     await db.pointages.put(pointage);
     this.notify();
 
-    // Tente immédiatement une synchronisation silencieuse si en ligne
-    if (navigator.onLine) {
+    // Déclenchement automatique de la synchronisation si en ligne
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
       this.triggerSync().catch(() => {});
     }
 
@@ -81,11 +105,11 @@ class SyncEngine {
   }
 
   /**
-   * Synchronise les pointages en attente vers Supabase
+   * Synchronise les pointages en attente vers Supabase via UPSERT sur (profile_id, date)
    */
   public async syncPendingPointages(): Promise<SyncResult> {
     if (this.isSyncing) return { success: 0, failed: 0, totalPending: 0 };
-    if (!navigator.onLine) {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
       return { success: 0, failed: 0, totalPending: 0, lastError: 'Vous êtes hors-ligne' };
     }
 
@@ -98,10 +122,10 @@ class SyncEngine {
     let requiresRealAuth = false;
 
     try {
-      // Toujours rafraîchir les données distantes (chantiers, profils, affectations, pointages)
+      // Rafraîchir les données distantes au préalable
       await this.pullRemoteData();
 
-      // Récupération de TOUS les pointages locaux non synchronisés (false ou undefined)
+      // Récupération de tous les pointages locaux non synchronisés
       const pending = await db.pointages.filter((pt) => !pt.synced).toArray();
 
       if (pending.length === 0) {
@@ -112,9 +136,8 @@ class SyncEngine {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session?.user) {
-        // L'utilisateur est en mode compte démo local sans token Supabase
         requiresRealAuth = true;
-        lastError = 'Session Supabase requise : vous utilisez un compte démo local. Connectez-vous avec un vrai compte Supabase (Jean ou Marc) pour synchroniser vos pointages.';
+        lastError = 'Session Supabase requise : vous utilisez un compte démo local. Connectez-vous avec un vrai compte Supabase pour synchroniser vos pointages.';
         return {
           success: 0,
           failed: pending.length,
@@ -126,31 +149,37 @@ class SyncEngine {
 
       for (const pt of pending) {
         try {
-          // Utilise le même UUID que localement pour éviter tout doublon après pull
-          const targetId = pt.id.startsWith('pt-') ? generateUUID() : pt.id;
-
           const payload = {
-            id: targetId,
-            profile_id: session.user.id, // Toujours utiliser l'UID Supabase authentifié
-            chantier_id: pt.chantier_id,
-            type: pt.type,
-            horodatage: pt.horodatage,
-            latitude: pt.latitude ?? null,
-            longitude: pt.longitude ?? null,
+            id: pt.id,
+            profile_id: session.user.id,
+            chantier_id: pt.chantier_id || null,
+            date: pt.date,
+            heures_totales: Number(pt.heures_totales) || 0,
+            temps_pause: Number(pt.temps_pause) || 0,
+            heures_sup: Number(pt.heures_sup) || 0,
             synchronise_le: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           };
 
-          const { error } = await supabase.from('pointages').insert(payload);
+          // UPSERT ciblant la contrainte d'unicité (profile_id, date)
+          const { data, error } = await supabase
+            .from('pointages')
+            .upsert(payload, { onConflict: 'profile_id,date' })
+            .select('id, synchronise_le, updated_at')
+            .single();
 
           if (!error) {
-            if (pt.id !== targetId) {
+            const finalId = data?.id || pt.id;
+            if (pt.id !== finalId) {
               await db.pointages.delete(pt.id);
             }
             await db.pointages.put({
               ...pt,
-              id: targetId,
+              id: finalId,
               synced: true,
               error: null,
+              synchronise_le: data?.synchronise_le || payload.synchronise_le,
+              updated_at: data?.updated_at || payload.updated_at,
             });
             successCount++;
           } else {
@@ -166,7 +195,7 @@ class SyncEngine {
         }
       }
 
-      // Re-télécharge les données pour refléter les pointages fraîchement insérés
+      // Re-télécharge les données pour refléter les pointages certifiés par le serveur
       await this.pullRemoteData();
     } catch (err) {
       lastError = err instanceof Error ? err.message : 'Erreur globale';
@@ -186,10 +215,10 @@ class SyncEngine {
 
   /**
    * Récupère TOUTES les données distantes depuis Supabase
-   * (chantiers, profils, affectations et pointages) et met à jour Dexie.
+   * (chantiers, profils, affectations et pointages) et réconcilie Dexie sans écraser les brouillons locaux.
    */
   public async pullRemoteData(): Promise<void> {
-    if (!navigator.onLine) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
 
     try {
       // 1. Chantiers
@@ -219,41 +248,65 @@ class SyncEngine {
         await db.affectations.bulkPut(remoteAffs);
       }
 
-      // 4. Pointages distants (pour que tous les appareils voient les pointages réels)
+      // 4. Pointages déclaratifs distants (triés par date décroissante)
       const { data: remotePointages, error: pointagesErr } = await supabase
         .from('pointages')
         .select('*')
-        .order('horodatage', { ascending: false })
-        .limit(200);
+        .order('date', { ascending: false })
+        .limit(300);
 
       if (!pointagesErr && remotePointages && remotePointages.length > 0) {
-        // Nettoyage automatique des anciens doublons locaux ("pt-...")
-        const allLocal = await db.pointages.toArray();
-        for (const localRow of allLocal) {
-          if (localRow.id.startsWith('pt-')) {
-            const hasDuplicateInRemote = remotePointages.some(
-              (rp) =>
-                rp.type === localRow.type &&
-                Math.abs(new Date(rp.horodatage).getTime() - new Date(localRow.horodatage).getTime()) < 5000
-            );
-            if (hasDuplicateInRemote) {
-              await db.pointages.delete(localRow.id);
+        for (const rp of remotePointages) {
+          const local = await db.pointages
+            .where('[profile_id+date]')
+            .equals([rp.profile_id, rp.date])
+            .first();
+
+          if (local) {
+            if (!local.synced) {
+              // Saisie locale en attente : NE PAS écraser les modifications locales non synchronisées
+              if (local.id !== rp.id) {
+                await db.pointages.delete(local.id);
+                await db.pointages.put({ ...local, id: rp.id });
+              }
+            } else {
+              // Saisie locale déjà synchronisée : mettre à jour avec les valeurs distantes certifiées
+              if (local.id !== rp.id) {
+                await db.pointages.delete(local.id);
+              }
+              await db.pointages.put({
+                id: rp.id,
+                profile_id: rp.profile_id,
+                chantier_id: rp.chantier_id,
+                date: rp.date,
+                heures_totales: Number(rp.heures_totales) || 0,
+                temps_pause: Number(rp.temps_pause) || 0,
+                heures_sup: Number(rp.heures_sup) || 0,
+                synchronise_le: rp.synchronise_le,
+                synced: true,
+                error: null,
+                created_at: rp.created_at,
+                updated_at: rp.updated_at,
+              });
             }
+          } else {
+            // Aucun enregistrement local : insertion directe
+            await db.pointages.put({
+              id: rp.id,
+              profile_id: rp.profile_id,
+              chantier_id: rp.chantier_id,
+              date: rp.date,
+              heures_totales: Number(rp.heures_totales) || 0,
+              temps_pause: Number(rp.temps_pause) || 0,
+              heures_sup: Number(rp.heures_sup) || 0,
+              synchronise_le: rp.synchronise_le,
+              synced: true,
+              error: null,
+              created_at: rp.created_at,
+              updated_at: rp.updated_at,
+            });
           }
         }
-
-        const mappedPointages: PointageLocal[] = remotePointages.map((pt) => ({
-          id: pt.id,
-          profile_id: pt.profile_id,
-          chantier_id: pt.chantier_id,
-          type: pt.type,
-          horodatage: pt.horodatage,
-          latitude: pt.latitude ?? null,
-          longitude: pt.longitude ?? null,
-          synced: true,
-          error: null,
-        }));
-        await db.pointages.bulkPut(mappedPointages);
       }
 
       this.notify();
