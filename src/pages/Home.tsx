@@ -315,16 +315,16 @@ export function Home() {
   return (
     <div className="space-y-5 pb-32 pb-[calc(env(safe-area-inset-bottom)+5rem)]">
       {/* 1. Header Biophilique Vert Forêt unifié */}
-      <section className="-mx-4 -mt-4 bg-foret text-white px-5 pt-7 pb-8 rounded-b-3xl shadow-soft space-y-5 relative overflow-hidden">
-        {/* Dégradé et ambiance naturelle haute définition */}
-        <div
-          className="absolute inset-0 opacity-20 pointer-events-none mix-blend-overlay"
-          style={{
-            backgroundImage: `radial-gradient(circle at 10% 20%, #8FA98F 0%, transparent 40%),
-                              radial-gradient(circle at 90% 80%, #C47452 0%, transparent 45%),
-                              linear-gradient(135deg, rgba(21,48,47,0.95) 0%, rgba(15,36,35,0.98) 100%)`,
-          }}
-        />
+      <section
+        className="-mx-4 -mt-4 text-white px-5 pt-7 pb-8 rounded-b-3xl shadow-soft space-y-5 relative"
+        style={{
+          backgroundColor: '#15302F',
+          backgroundImage: `
+      radial-gradient(circle 280px at 0% 0%, rgba(143, 169, 143, 0.35) 0%, transparent 80%),
+      radial-gradient(circle 260px at 100% 100%, rgba(196, 116, 82, 0.3) 0%, transparent 80%)
+    `,
+        }}
+      >
 
         {/* Ligne 1 : Branding, Rôle, NetworkBanner, Avatar unique */}
         <div className="flex items-center justify-between pt-1.5 relative z-10">
