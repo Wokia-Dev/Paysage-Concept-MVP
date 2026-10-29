@@ -25,7 +25,6 @@ import {
   CheckCircle2,
   CloudUpload,
   ChevronRight,
-  Cloud,
   Sun,
   CloudRain,
   Navigation,
@@ -40,6 +39,7 @@ import {
   Trees,
   X,
   FolderKanban,
+  CloudSun,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -353,14 +353,34 @@ export function Home() {
           </div>
         </div>
 
-        {/* Ligne 2 : Salutation personnalisée */}
-        <div className="relative z-10 pt-0.5">
-          <h1 className="text-2xl font-bold tracking-tight text-white leading-tight">
-            Bonjour {profile?.prenom || 'Marc'} 👋
-          </h1>
-          <p className="text-xs text-sauge font-medium mt-0.5">
-            Voici un aperçu de votre journée
-          </p>
+        {/* Ligne 2 : Salutation personnalisée & Widget Météo au sommet */}
+        <div className="flex items-center justify-between gap-3 relative z-10 pt-0.5">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight text-white leading-tight">
+              Bonjour {profile?.prenom || 'Marc'} 👋
+            </h1>
+            <p className="text-xs text-sauge font-medium mt-0.5">
+              Voici un aperçu de votre journée
+            </p>
+          </div>
+
+          {/* Widget Météo intégré au bandeau supérieur (comme dans le design de référence) */}
+          <div
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-3xl bg-white/10 backdrop-blur-xs border border-white/15 text-white shadow-2xs hover:bg-white/15 transition-all cursor-default shrink-0"
+            title={`Météo chantier : ${weather ? `${weather.temperature}°C, ${weather.description}` : '11°C'}`}
+          >
+            <span className="sr-only">Météo chantier</span>
+            {weather?.iconName === 'cloud-rain' ? (
+              <CloudRain className="w-4 h-4 text-sky-300 shrink-0" />
+            ) : weather?.iconName === 'sun' ? (
+              <Sun className="w-4 h-4 text-amber-300 shrink-0" />
+            ) : (
+              <CloudSun className="w-4 h-4 text-amber-300 shrink-0" />
+            )}
+            <span className="text-sm font-bold text-white tracking-tight">
+              {weather ? `${weather.temperature}°C` : '11°C'}
+            </span>
+          </div>
         </div>
 
         {/* Ligne 3 : Bandeau Calendrier Hebdomadaire Interactif */}
@@ -398,30 +418,14 @@ export function Home() {
               Prochaine intervention
             </span>
 
-            <div className="flex items-center gap-1.5 flex-wrap justify-end">
-              {/* Widget Météo intégré en pilule discrète avec micro-interactions naturelles */}
-              <div
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-craie border border-sable/80 text-[11px] font-bold text-foret shadow-2xs hover:bg-white transition-colors cursor-default"
-                title="Météo chantier"
+            {activeHeroChantier && (
+              <span
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${getStatusBadge(activeHeroChantier.statut).className
+                  }`}
               >
-                <span className="sr-only">Météo chantier</span>
-                {weather?.iconName === 'sun' && <Sun className="w-3.5 h-3.5 text-amber-500 animate-weather-sun shrink-0" />}
-                {weather?.iconName === 'cloud' && <Cloud className="w-3.5 h-3.5 text-slate-500 animate-weather-cloud shrink-0" />}
-                {weather?.iconName === 'cloud-rain' && <CloudRain className="w-3.5 h-3.5 text-blue-500 animate-weather-rain shrink-0" />}
-                {!weather?.iconName && <Sun className="w-3.5 h-3.5 text-amber-500 animate-weather-sun shrink-0" />}
-                <span>{weather ? `${weather.temperature}°C` : '18°C'}</span>
-                <span className="text-sauge font-medium hidden sm:inline">• {weather ? weather.description : 'Ensoleillé'}</span>
-              </div>
-
-              {activeHeroChantier && (
-                <span
-                  className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${getStatusBadge(activeHeroChantier.statut).className
-                    }`}
-                >
-                  {getStatusBadge(activeHeroChantier.statut).label}
-                </span>
-              )}
-            </div>
+                {getStatusBadge(activeHeroChantier.statut).label}
+              </span>
+            )}
           </div>
 
           {activeHeroChantier ? (

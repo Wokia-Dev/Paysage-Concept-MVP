@@ -24,7 +24,7 @@ const navItems: NavItem[] = [
 
 export function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-sable/80 pb-6">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-sable/80 pb-safe">
       <div className="max-w-md mx-auto px-2 flex items-center justify-around h-16">
         {navItems.map((item) => {
           const Icon = item.icon;
