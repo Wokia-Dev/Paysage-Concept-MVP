@@ -28,7 +28,7 @@ export function AppLayout() {
   return (
     <div className="min-h-screen bg-craie flex flex-col items-center justify-start text-foret font-sans antialiased">
       {/* Container mobile standardisé (max-w-md) avec centrage sur desktop */}
-      <div className="w-full max-w-md min-h-screen flex flex-col bg-craie shadow-soft relative border-x border-sable/40 mx-auto">
+      <div className="w-full max-w-md min-h-screen flex flex-col bg-craie shadow-soft relative border-sable/40 mx-auto">
         {/* Header persistant Vert Forêt incurvé (masqué sur l'accueil au profit du hero header unifié) */}
         {!isHome && (
           <header className="sticky top-0 z-30 bg-foret text-blanc px-4 pt-safe pb-4 rounded-b-2xl shadow-soft flex items-center justify-between border-b border-sauge/20">

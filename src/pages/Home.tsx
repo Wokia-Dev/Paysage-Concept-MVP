@@ -316,7 +316,7 @@ export function Home() {
     <div className="space-y-5 pb-32 pb-[calc(env(safe-area-inset-bottom)+5rem)]">
       {/* 1. Header Biophilique Vert Forêt unifié */}
       <section
-        className="-mx-4 -mt-4 text-white px-5 pt-7 pb-8 rounded-b-3xl shadow-soft space-y-5 relative overflow-hidden bg-foret"
+        className="-mx-4 -mt-4 text-white px-5 pt-7 pb-8 rounded-b-4xl shadow-soft space-y-5 relative overflow-hidden bg-foret"
         style={{
           backgroundColor: '#15302F',
           backgroundImage: `
