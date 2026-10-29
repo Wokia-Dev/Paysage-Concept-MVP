@@ -24,7 +24,7 @@ const navItems: NavItem[] = [
 
 export function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-sable/80 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-sable/80 pb-6">
       <div className="max-w-md mx-auto px-2 flex items-center justify-around h-16">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -34,10 +34,9 @@ export function BottomNav() {
               to={item.to}
               end={item.to === '/'}
               className={({ isActive }) =>
-                `relative flex flex-col items-center justify-center min-w-[48px] min-h-[48px] w-16 py-1 transition-all duration-200 active:scale-95 ${
-                  isActive
-                    ? 'text-foret font-bold'
-                    : 'text-muted hover:text-foret font-medium'
+                `relative flex flex-col items-center justify-center min-w-[48px] min-h-[48px] w-16 py-1 transition-all duration-200 active:scale-95 ${isActive
+                  ? 'text-foret font-bold'
+                  : 'text-muted hover:text-foret font-medium'
                 }`
               }
             >
