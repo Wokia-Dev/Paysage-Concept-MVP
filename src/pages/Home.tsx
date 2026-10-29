@@ -320,12 +320,26 @@ export function Home() {
         style={{
           backgroundColor: '#15302F',
           backgroundImage: `
-            linear-gradient(180deg, rgba(21, 48, 47, 0.88) 0%, rgba(21, 48, 47, 0.45) 30%, rgba(21, 48, 47, 0.75) 65%, #15302F 95%, #15302F 100%),
-            linear-gradient(90deg, #15302F 0%, rgba(21, 48, 47, 0.94) 30%, rgba(21, 48, 47, 0.55) 65%, rgba(21, 48, 47, 0.15) 100%),
-            url('${import.meta.env.BASE_URL}hero-paysage.jpg')
-          `,
-          backgroundSize: 'cover',
-          backgroundPosition: 'right 20% center',
+      /* 1. Halo chaud d'ambiance en bas à gauche */
+      radial-gradient(circle 260px at 0% 100%, rgba(196, 116, 82, 0.25) 0%, transparent 75%),
+
+      /* 2. Masque horizontal renforcé */
+      linear-gradient(90deg, rgba(21, 48, 47, 0.96) 0%, rgba(21, 48, 47, 0.85) 25%, rgba(21, 48, 47, 0.45) 45%, rgba(21, 48, 47, 0.25) 100%),
+
+      /* 3. Masque vertical renforcé */
+      linear-gradient(180deg, rgba(21, 48, 47, 0.2) 40%, rgba(21, 48, 47, 0.6) 60%, #15302F 85%, #15302F 100%),
+
+      /* 4. Halo sauge discret */
+      radial-gradient(circle 300px at 100% 0%, rgba(143, 169, 143, 0.2) 0%, transparent 75%),
+
+      /* 5. Voile global pour atténuer directement l'image */
+      linear-gradient(rgba(21, 48, 47, 0.4), rgba(21, 48, 47, 0.4)),
+
+      /* 6. Image d'arrière-plan */
+      url('${import.meta.env.BASE_URL}hero-paysage.jpg')
+    `,
+          backgroundSize: 'auto, auto, auto, auto, auto, cover',
+          backgroundPosition: 'center, center, center, center, center, right top',
           backgroundRepeat: 'no-repeat',
         }}
       >
