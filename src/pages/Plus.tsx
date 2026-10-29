@@ -333,11 +333,16 @@ export function Plus() {
       </div>
 
       {/* 6. À propos de l'application */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 border border-sable/80 shadow-soft text-center text-xs text-foret/70 space-y-1">
-        <p className="font-extrabold text-foret">Paysage Concept — Version 1.0.0 (MVP)</p>
-        <p className="text-[11px] text-sauge font-medium">
-          PWA Mobile-First & Offline-First • Dexie + Supabase
-        </p>
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 border border-sable/80 shadow-soft text-center text-xs text-foret/70 flex flex-col items-center space-y-2">
+        <div className="w-12 h-12 rounded-xl overflow-hidden shadow-xs bg-black flex items-center justify-center">
+          <img src="/logo.png" alt="Paysage Concept" className="w-full h-full object-contain" />
+        </div>
+        <div>
+          <p className="font-extrabold text-foret">Paysage Concept — Version 1.0.0 (MVP)</p>
+          <p className="text-[11px] text-sauge font-medium">
+            PWA Mobile-First & Offline-First • Dexie + Supabase
+          </p>
+        </div>
       </div>
 
       {/* 7. Déconnexion avec min-h-[48px] touch target */}

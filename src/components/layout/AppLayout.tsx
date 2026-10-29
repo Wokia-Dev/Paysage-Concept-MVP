@@ -2,7 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { BottomNav } from './BottomNav';
 import { NetworkBanner } from '../common/NetworkBanner';
 import { useAuth } from '../../context/useAuth';
-import { Trees } from 'lucide-react';
+import { LogoOutline } from '../common/LogoOutline';
 
 export function AppLayout() {
   const { profile } = useAuth();
@@ -33,8 +33,8 @@ export function AppLayout() {
         {!isHome && (
           <header className="sticky top-0 z-30 bg-foret text-blanc px-4 pt-safe pb-4 rounded-b-2xl shadow-soft flex items-center justify-between border-b border-sauge/20">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-sauge/20 border border-sauge/30 flex items-center justify-center text-sable shadow-xs">
-                <Trees className="w-5 h-5 text-sauge" />
+              <div className="w-9 h-9 rounded-xl bg-sauge/20 border border-sauge/30 flex items-center justify-center text-sauge shadow-xs shrink-0">
+                <LogoOutline className="w-5 h-5 text-sauge" />
               </div>
               <div>
                 <span className="text-sm font-bold tracking-tight text-white block leading-none">

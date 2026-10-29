@@ -19,6 +19,7 @@ import { DateSelectorPill } from '../components/common/DateSelectorPill';
 import { WeeklyCalendarStrip } from '../components/common/WeeklyCalendarStrip';
 import { NetworkBanner } from '../components/common/NetworkBanner';
 import { HoursAnalyticsSection } from '../components/common/HoursAnalyticsSection';
+import { LogoOutline } from '../components/common/LogoOutline';
 import {
   MapPin,
   Clock,
@@ -36,7 +37,6 @@ import {
   Minus,
   Target,
   RotateCcw,
-  Trees,
   X,
   FolderKanban,
   CloudSun,
@@ -316,7 +316,7 @@ export function Home() {
     <div className="space-y-5 pb-32 pb-[calc(env(safe-area-inset-bottom)+5rem)]">
       {/* 1. Header Biophilique Vert Forêt unifié */}
       <section
-        className="-mx-4 -mt-4 text-white px-5 pt-7 pb-8 rounded-b-4xl shadow-soft space-y-5 relative overflow-hidden bg-foret"
+        className="-mx-4 -mt-4 text-white px-5 pt-7 pb-8 rounded-b-3xl shadow-soft space-y-5 relative overflow-hidden bg-foret"
         style={{
           backgroundColor: '#15302F',
           backgroundImage: `
@@ -347,8 +347,8 @@ export function Home() {
         {/* Ligne 1 : Branding, Rôle, NetworkBanner, Avatar unique */}
         <div className="flex items-center justify-between pt-1.5 relative z-10">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-sauge/20 border border-sauge/30 flex items-center justify-center text-sable shadow-xs">
-              <Trees className="w-4 h-4 text-sauge" />
+            <div className="w-8 h-8 rounded-xl bg-sauge/20 border border-sauge/30 flex items-center justify-center text-sauge shadow-xs shrink-0">
+              <LogoOutline className="w-4.5 h-4.5 text-sauge" />
             </div>
             <div>
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-sauge block leading-none">

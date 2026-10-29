@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase';
 import { db } from '../lib/db';
 import type { UserRole, Profile } from '../types/database';
 import {
-  Trees,
   Lock,
   Mail,
   User,
@@ -152,8 +151,12 @@ export function Login() {
       <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-xl border border-sable/70 space-y-5">
         {/* Branding Header */}
         <div className="flex flex-col items-center text-center space-y-2">
-          <div className="w-16 h-16 rounded-2xl bg-foret flex items-center justify-center text-sable shadow-md">
-            <Trees className="w-9 h-9 text-sable" />
+          <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-md flex items-center justify-center bg-black">
+            <img
+              src="/logo.png"
+              alt="Paysage Concept"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div>
             <h1 className="text-xl font-extrabold text-foret tracking-tight">
