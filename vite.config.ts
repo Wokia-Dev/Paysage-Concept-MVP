@@ -20,7 +20,7 @@ export default defineConfig({
         short_name: 'Paysage',
         description: 'Application de gestion de chantiers et pointage terrain',
         theme_color: '#15302F',
-        background_color: '#FAFAFB',
+        background_color: '#15302F',
         display: 'standalone',
         orientation: 'portrait',
         start_url: './',
@@ -31,6 +31,12 @@ export default defineConfig({
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
+          },
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable',
           },
           {
             src: 'pwa-512x512.png',

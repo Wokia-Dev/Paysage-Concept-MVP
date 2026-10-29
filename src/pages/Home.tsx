@@ -316,7 +316,7 @@ export function Home() {
     <div className="space-y-5 pb-32 pb-[calc(env(safe-area-inset-bottom)+5rem)]">
       {/* 1. Header Biophilique Vert Forêt unifié */}
       <section
-        className="-mx-4 -mt-4 text-white px-5 pt-7 pb-8 rounded-b-3xl shadow-soft space-y-5 relative overflow-hidden bg-foret"
+        className="-mx-4 -mt-4 text-white px-5 pt-[calc(env(safe-area-inset-top,0px)+1.75rem)] pb-8 rounded-b-3xl shadow-soft space-y-5 relative overflow-hidden bg-foret"
         style={{
           backgroundColor: '#15302F',
           backgroundImage: `
@@ -326,11 +326,11 @@ export function Home() {
       /* 2. Masque horizontal renforcé */
       linear-gradient(90deg, rgba(21, 48, 47, 0.96) 0%, rgba(21, 48, 47, 0.85) 25%, rgba(21, 48, 47, 0.45) 45%, rgba(21, 48, 47, 0.25) 100%),
 
-      /* 3. Masque vertical renforcé */
-      linear-gradient(180deg, rgba(21, 48, 47, 0.2) 40%, rgba(21, 48, 47, 0.6) 60%, #15302F 85%, #15302F 100%),
+      /* 3. Masque vertical renforcé avec couverture intégrale du safe-area status bar */
+      linear-gradient(180deg, #15302F 0%, rgba(21, 48, 47, 0.96) 18%, rgba(21, 48, 47, 0.45) 42%, rgba(21, 48, 47, 0.65) 65%, #15302F 85%, #15302F 100%),
 
-      /* 4. Halo sauge discret */
-      radial-gradient(circle 300px at 100% 0%, rgba(143, 169, 143, 0.2) 0%, transparent 75%),
+      /* 4. Halo sauge discret déplacé hors de la zone d'encoche */
+      radial-gradient(circle 300px at 100% 35%, rgba(143, 169, 143, 0.2) 0%, transparent 75%),
 
       /* 5. Voile global pour atténuer directement l'image */
       linear-gradient(rgba(21, 48, 47, 0.4), rgba(21, 48, 47, 0.4)),

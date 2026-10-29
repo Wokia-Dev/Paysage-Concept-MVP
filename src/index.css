@@ -11,6 +11,11 @@
   --shadow-soft: 0 4px 20px rgba(21, 48, 47, 0.06);
 }
 
+html {
+  background-color: var(--color-foret);
+  color-scheme: light dark;
+}
+
 body {
   background-color: var(--color-craie);
   color: var(--color-foret);
