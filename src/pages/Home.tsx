@@ -288,7 +288,7 @@ export function Home() {
 
   const userInitials = profile
     ? `${profile.prenom.charAt(0)}${profile.nom.charAt(0)}`.toUpperCase()
-    : 'PC';
+    : 'JD';
 
   const getRoleLabel = (role?: string) => {
     switch (role) {
@@ -316,13 +316,17 @@ export function Home() {
     <div className="space-y-5 pb-32 pb-[calc(env(safe-area-inset-bottom)+5rem)]">
       {/* 1. Header Biophilique Vert Forêt unifié */}
       <section
-        className="-mx-4 -mt-4 text-white px-5 pt-7 pb-8 rounded-b-3xl shadow-soft space-y-5 relative"
+        className="-mx-4 -mt-4 text-white px-5 pt-7 pb-8 rounded-b-3xl shadow-soft space-y-5 relative overflow-hidden bg-foret"
         style={{
           backgroundColor: '#15302F',
           backgroundImage: `
-      radial-gradient(circle 280px at 0% 0%, rgba(143, 169, 143, 0.35) 0%, transparent 80%),
-      radial-gradient(circle 260px at 100% 100%, rgba(196, 116, 82, 0.3) 0%, transparent 80%)
-    `,
+            linear-gradient(180deg, rgba(21, 48, 47, 0.88) 0%, rgba(21, 48, 47, 0.45) 30%, rgba(21, 48, 47, 0.75) 65%, #15302F 95%, #15302F 100%),
+            linear-gradient(90deg, #15302F 0%, rgba(21, 48, 47, 0.94) 30%, rgba(21, 48, 47, 0.55) 65%, rgba(21, 48, 47, 0.15) 100%),
+            url('${import.meta.env.BASE_URL}hero-paysage.jpg')
+          `,
+          backgroundSize: 'cover',
+          backgroundPosition: 'right 20% center',
+          backgroundRepeat: 'no-repeat',
         }}
       >
 
@@ -357,7 +361,7 @@ export function Home() {
         <div className="flex items-center justify-between gap-3 relative z-10 pt-0.5">
           <div className="min-w-0">
             <h1 className="text-2xl font-bold tracking-tight text-white leading-tight">
-              Bonjour {profile?.prenom || 'Marc'} 👋
+              Bonjour {profile?.prenom || 'Jean'} 👋
             </h1>
             <p className="text-xs text-sauge font-medium mt-0.5">
               Voici un aperçu de votre journée
