@@ -109,11 +109,11 @@ describe('Milestone 2: Home Dashboard & Declarative Time-Tracking (R3 & R4)', ()
       assert.doesNotMatch(homeContent, /2 non lus/);
     });
 
-    it('renders Hero Chantier card with status badge, map pin, GPS navigation link, and start time', () => {
+    it('renders Hero Chantier card with status badge, map pin, and GPS navigation link', () => {
       assert.match(homeContent, /Prochaine intervention|Chantier\s*:/);
       assert.match(homeContent, /getStatusBadge/);
       assert.match(homeContent, /https:\/\/maps\.google\.com\/\?q=/);
-      assert.match(homeContent, /Intervention prévue à 08h00/);
+      assert.doesNotMatch(homeContent, /Intervention prévue à/);
     });
 
     it('strictly forbids photo thumbnails, galleries, and image banners on Chantier cards (R3 & R5)', () => {

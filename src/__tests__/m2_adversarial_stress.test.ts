@@ -63,11 +63,11 @@ describe('Milestone 2 Adversarial Stress Suite (Challenger 2)', () => {
       assert.ok(heroSectionMatch, 'Hero Chantier card section must be present in Home.tsx');
       const heroSection = heroSectionMatch[1];
 
-      // Must have client name, status badge, address with Google Maps link, and scheduled start time
+      // Must have client name, status badge, address with Google Maps link
       assert.match(heroSection, /nom_client/, 'Hero card must display client name');
       assert.match(heroSection, /getStatusBadge/, 'Hero card must display status badge');
       assert.match(heroSection, /https:\/\/maps\.google\.com\/\?q=/, 'Hero card must link to GPS navigation');
-      assert.match(heroSection, /Intervention prévue à 08h00/, 'Hero card must display scheduled time');
+      assert.doesNotMatch(heroSection, /Intervention prévue à/, 'Hero card must not display hardcoded intervention time');
       assert.match(heroSection, /Consulter la fiche détaillée/, 'Hero card must link to detailed sheet');
 
       // Carousel dots must be typographic SVG/div elements, not image carousels

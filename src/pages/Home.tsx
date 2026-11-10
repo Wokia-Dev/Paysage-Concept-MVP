@@ -452,10 +452,6 @@ export function Home() {
                 <h2 className="text-lg font-bold text-foret tracking-tight">
                   Chantier : {activeHeroChantier.nom_client}
                 </h2>
-                <div className="flex items-center gap-1.5 text-xs text-foret/70 font-medium mt-1">
-                  <Clock className="w-3.5 h-3.5 text-sauge" />
-                  <span>Intervention prévue à 08h00</span>
-                </div>
               </div>
 
               {/* Adresse avec lien direct GPS */}
