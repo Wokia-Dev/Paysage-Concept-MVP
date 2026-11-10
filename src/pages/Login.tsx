@@ -4,6 +4,7 @@ import { useAuth } from '../context/useAuth';
 import { supabase } from '../lib/supabase';
 import { db } from '../lib/db';
 import type { UserRole, Profile } from '../types/database';
+import logoUrl from '../assets/logo.png';
 import {
   Lock,
   Mail,
@@ -153,7 +154,7 @@ export function Login() {
         <div className="flex flex-col items-center text-center space-y-2">
           <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-md flex items-center justify-center bg-black">
             <img
-              src="/logo.png"
+              src={logoUrl}
               alt="Paysage Concept"
               className="w-full h-full object-contain"
             />

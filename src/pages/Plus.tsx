@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/useAuth';
 import { db, reseedDatabase } from '../lib/db';
 import { syncEngine } from '../lib/sync';
+import logoUrl from '../assets/logo.png';
 import {
   ShieldCheck,
   Database,
@@ -335,7 +336,7 @@ export function Plus() {
       {/* 6. À propos de l'application */}
       <div className="bg-white rounded-2xl sm:rounded-3xl p-4 border border-sable/80 shadow-soft text-center text-xs text-foret/70 flex flex-col items-center space-y-2">
         <div className="w-12 h-12 rounded-xl overflow-hidden shadow-xs bg-black flex items-center justify-center">
-          <img src="/logo.png" alt="Paysage Concept" className="w-full h-full object-contain" />
+          <img src={logoUrl} alt="Paysage Concept" className="w-full h-full object-contain" />
         </div>
         <div>
           <p className="font-extrabold text-foret">Paysage Concept — Version 1.0.0 (MVP)</p>

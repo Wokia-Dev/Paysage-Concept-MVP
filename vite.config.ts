@@ -15,7 +15,7 @@ export default defineConfig({
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'favicon.svg', 'logo.png'],
       manifest: {
-        id: '/',
+        id: process.env.VITE_BASE_PATH || '/',
         name: 'Paysage Concept',
         short_name: 'Paysage',
         description: 'Application de gestion de chantiers et pointage terrain',
