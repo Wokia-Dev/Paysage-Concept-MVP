@@ -1,164 +1,249 @@
 -- ==============================================================================
--- PAYSAGE CONCEPT - RÉINITIALISATION PROPRE & AMORÇAGE COMPLET SUPABASE
--- À exécuter dans le "SQL Editor" de votre tableau de bord Supabase :
--- https://supabase.com/dashboard/project/cxcvngmniodppirpzzdz/sql
+-- PAYSAGE CONCEPT - RESET COMPLET & SEEDING PROPRE (0 POINTAGES)
+-- Console Supabase : https://supabase.com/dashboard/project/cxcvngmniodppirpzzdz/sql
 -- ==============================================================================
 
+BEGIN;
+
 -- ------------------------------------------------------------------------------
--- 1. PURGE PROPRE DE TOUTES LES DONNÉES EXISTANTES
--- (Respecte l'ordre des contraintes de clés étrangères)
+-- 1. PURGE PROPRE (RESPECT STRICT DE L'ORDRE DES CLÉS ÉTRANGÈRES)
 -- ------------------------------------------------------------------------------
 
--- Supprimer tous les pointages
+-- 1.1. Vider strictement la table des pointages (pour base 100% vierge)
 DELETE FROM public.pointages;
 
--- Supprimer toutes les affectations de chantiers
+-- 1.2. Vider les affectations
 DELETE FROM public.affectations;
 
--- Supprimer tous les chantiers
+-- 1.3. Vider les chantiers
 DELETE FROM public.chantiers;
 
--- Supprimer tous les profils sauf les 2 utilisateurs de test principaux
+-- 1.4. Nettoyer les identités orphelines dans auth.identities
+DELETE FROM auth.identities
+WHERE user_id NOT IN (
+  '4fa02732-58a2-4de7-872f-1db234899c1e', -- Jean Dupont
+  'd587499d-3f96-4164-b37f-01b7a442646b', -- Marc Vasseur
+  'b3000000-0000-4000-8000-000000000003', -- Thomas Bernard
+  'b4000000-0000-4000-8000-000000000004', -- Lucas Moreau
+  'b5000000-0000-4000-8000-000000000005'  -- Antoine Petit
+);
+
+-- 1.5. Nettoyer les profils sauf les utilisateurs de test définis
 DELETE FROM public.profiles
 WHERE id NOT IN (
-  '4fa02732-58a2-4de7-872f-1db234899c1e', -- Jean Dupont
-  'd587499d-3f96-4164-b37f-01b7a442646b'  -- Marc Vasseur
+  '4fa02732-58a2-4de7-872f-1db234899c1e',
+  'd587499d-3f96-4164-b37f-01b7a442646b',
+  'b3000000-0000-4000-8000-000000000003',
+  'b4000000-0000-4000-8000-000000000004',
+  'b5000000-0000-4000-8000-000000000005'
 );
 
--- Supprimer tous les autres utilisateurs dans auth.users (sauf Jean et Marc)
+-- 1.6. Nettoyer auth.users sauf les utilisateurs de test définis
 DELETE FROM auth.users
 WHERE id NOT IN (
-  '4fa02732-58a2-4de7-872f-1db234899c1e', -- Jean Dupont
-  'd587499d-3f96-4164-b37f-01b7a442646b'  -- Marc Vasseur
-);
-
--- Confirmer immédiatement les emails de Jean et Marc
-UPDATE auth.users
-SET email_confirmed_at = now()
-WHERE id IN (
   '4fa02732-58a2-4de7-872f-1db234899c1e',
-  'd587499d-3f96-4164-b37f-01b7a442646b'
+  'd587499d-3f96-4164-b37f-01b7a442646b',
+  'b3000000-0000-4000-8000-000000000003',
+  'b4000000-0000-4000-8000-000000000004',
+  'b5000000-0000-4000-8000-000000000005'
 );
 
 -- ------------------------------------------------------------------------------
--- 2. CRÉATION DES 3 AUTRES OUVRIERS DANS AUTH.USERS (AVEC MOT DE PASSE DUPLIQUÉ)
+-- 2. CRÉATION / SYNCHRONISATION DES COMPTES DANS AUTH.USERS & AUTH.IDENTITIES
+-- Mot de passe unique garanti : 'Paysage2026!'
+-- Compatibilité GoTrue Auth (scan strings non-null + provider identities)
 -- ------------------------------------------------------------------------------
 DO $$
 DECLARE
-  v_pwd text;
   v_instance uuid;
+  v_pwd text;
 BEGIN
-  -- Récupérer le hash du mot de passe (Paysage2026!) et l'instance_id de Jean Dupont
-  SELECT encrypted_password, instance_id INTO v_pwd, v_instance
-  FROM auth.users
-  WHERE id = '4fa02732-58a2-4de7-872f-1db234899c1e'
-  LIMIT 1;
-
+  SELECT instance_id INTO v_instance FROM auth.users WHERE instance_id IS NOT NULL LIMIT 1;
   IF v_instance IS NULL THEN
     v_instance := '00000000-0000-4000-8000-000000000000'::uuid;
   END IF;
 
-  -- 1) Thomas Bernard (Ouvrier)
+  BEGIN
+    v_pwd := extensions.crypt('Paysage2026!', extensions.gen_salt('bf'));
+  EXCEPTION WHEN OTHERS THEN
+    v_pwd := '$2a$10$wE1V6J2/bH9eWvGj.QO/5Oi1u0H7yB6V7Zt9W1iE.dK6Z0i9fP5y2';
+  END;
+
+  -- 1. Jean Dupont
   INSERT INTO auth.users (
     id, instance_id, email, encrypted_password, email_confirmed_at,
-    raw_app_meta_data, raw_user_meta_data, role, aud, created_at, updated_at
+    raw_app_meta_data, raw_user_meta_data, role, aud,
+    confirmation_token, recovery_token, email_change_token_new, email_change, phone_change,
+    created_at, updated_at
+  ) VALUES (
+    '4fa02732-58a2-4de7-872f-1db234899c1e',
+    v_instance,
+    'jean.dupont@paysageconcept.fr',
+    v_pwd,
+    now(),
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    '{"prenom":"Jean","nom":"Dupont"}'::jsonb,
+    'authenticated',
+    'authenticated',
+    '', '', '', '', '',
+    now(),
+    now()
+  ) ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    encrypted_password = v_pwd,
+    email_confirmed_at = now(),
+    confirmation_token = COALESCE(auth.users.confirmation_token, ''),
+    recovery_token = COALESCE(auth.users.recovery_token, ''),
+    email_change = COALESCE(auth.users.email_change, '');
+
+  -- 2. Marc Vasseur (Chef d'équipe)
+  INSERT INTO auth.users (
+    id, instance_id, email, encrypted_password, email_confirmed_at,
+    raw_app_meta_data, raw_user_meta_data, role, aud,
+    confirmation_token, recovery_token, email_change_token_new, email_change, phone_change,
+    created_at, updated_at
+  ) VALUES (
+    'd587499d-3f96-4164-b37f-01b7a442646b',
+    v_instance,
+    'marc.vasseur@paysageconcept.fr',
+    v_pwd,
+    now(),
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    '{"prenom":"Marc","nom":"Vasseur"}'::jsonb,
+    'authenticated',
+    'authenticated',
+    '', '', '', '', '',
+    now(),
+    now()
+  ) ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    encrypted_password = v_pwd,
+    email_confirmed_at = now(),
+    confirmation_token = COALESCE(auth.users.confirmation_token, ''),
+    recovery_token = COALESCE(auth.users.recovery_token, ''),
+    email_change = COALESCE(auth.users.email_change, '');
+
+  -- 3. Thomas Bernard
+  INSERT INTO auth.users (
+    id, instance_id, email, encrypted_password, email_confirmed_at,
+    raw_app_meta_data, raw_user_meta_data, role, aud,
+    confirmation_token, recovery_token, email_change_token_new, email_change, phone_change,
+    created_at, updated_at
   ) VALUES (
     'b3000000-0000-4000-8000-000000000003',
     v_instance,
     'thomas.bernard@paysageconcept.fr',
-    COALESCE(v_pwd, '$2a$10$wE1V6J2/bH9eWvGj.QO/5Oi1u0H7yB6V7Zt9W1iE.dK6Z0i9fP5y2'),
+    v_pwd,
     now(),
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"prenom":"Thomas","nom":"Bernard"}'::jsonb,
     'authenticated',
     'authenticated',
+    '', '', '', '', '',
     now(),
     now()
   ) ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email,
-    email_confirmed_at = now();
+    encrypted_password = v_pwd,
+    email_confirmed_at = now(),
+    confirmation_token = COALESCE(auth.users.confirmation_token, ''),
+    recovery_token = COALESCE(auth.users.recovery_token, ''),
+    email_change = COALESCE(auth.users.email_change, '');
 
-  -- 2) Lucas Moreau (Ouvrier)
+  -- 4. Lucas Moreau
   INSERT INTO auth.users (
     id, instance_id, email, encrypted_password, email_confirmed_at,
-    raw_app_meta_data, raw_user_meta_data, role, aud, created_at, updated_at
+    raw_app_meta_data, raw_user_meta_data, role, aud,
+    confirmation_token, recovery_token, email_change_token_new, email_change, phone_change,
+    created_at, updated_at
   ) VALUES (
     'b4000000-0000-4000-8000-000000000004',
     v_instance,
     'lucas.moreau@paysageconcept.fr',
-    COALESCE(v_pwd, '$2a$10$wE1V6J2/bH9eWvGj.QO/5Oi1u0H7yB6V7Zt9W1iE.dK6Z0i9fP5y2'),
+    v_pwd,
     now(),
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"prenom":"Lucas","nom":"Moreau"}'::jsonb,
     'authenticated',
     'authenticated',
+    '', '', '', '', '',
     now(),
     now()
   ) ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email,
-    email_confirmed_at = now();
+    encrypted_password = v_pwd,
+    email_confirmed_at = now(),
+    confirmation_token = COALESCE(auth.users.confirmation_token, ''),
+    recovery_token = COALESCE(auth.users.recovery_token, ''),
+    email_change = COALESCE(auth.users.email_change, '');
 
-  -- 3) Antoine Petit (Ouvrier)
+  -- 5. Antoine Petit
   INSERT INTO auth.users (
     id, instance_id, email, encrypted_password, email_confirmed_at,
-    raw_app_meta_data, raw_user_meta_data, role, aud, created_at, updated_at
+    raw_app_meta_data, raw_user_meta_data, role, aud,
+    confirmation_token, recovery_token, email_change_token_new, email_change, phone_change,
+    created_at, updated_at
   ) VALUES (
     'b5000000-0000-4000-8000-000000000005',
     v_instance,
     'antoine.petit@paysageconcept.fr',
-    COALESCE(v_pwd, '$2a$10$wE1V6J2/bH9eWvGj.QO/5Oi1u0H7yB6V7Zt9W1iE.dK6Z0i9fP5y2'),
+    v_pwd,
     now(),
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"prenom":"Antoine","nom":"Petit"}'::jsonb,
     'authenticated',
     'authenticated',
+    '', '', '', '', '',
     now(),
     now()
   ) ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email,
-    email_confirmed_at = now();
+    encrypted_password = v_pwd,
+    email_confirmed_at = now(),
+    confirmation_token = COALESCE(auth.users.confirmation_token, ''),
+    recovery_token = COALESCE(auth.users.recovery_token, ''),
+    email_change = COALESCE(auth.users.email_change, '');
+END $$;
+
+-- Enregistrement / synchronisation des identités GoTrue
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'auth' AND table_name = 'identities' AND column_name = 'provider_id'
+  ) THEN
+    INSERT INTO auth.identities (
+      id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+    ) VALUES
+      ('4fa02732-58a2-4de7-872f-1db234899c1e', '4fa02732-58a2-4de7-872f-1db234899c1e', '4fa02732-58a2-4de7-872f-1db234899c1e', '{"sub":"4fa02732-58a2-4de7-872f-1db234899c1e","email":"jean.dupont@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('d587499d-3f96-4164-b37f-01b7a442646b', 'd587499d-3f96-4164-b37f-01b7a442646b', 'd587499d-3f96-4164-b37f-01b7a442646b', '{"sub":"d587499d-3f96-4164-b37f-01b7a442646b","email":"marc.vasseur@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('b3000000-0000-4000-8000-000000000003', 'b3000000-0000-4000-8000-000000000003', 'b3000000-0000-4000-8000-000000000003', '{"sub":"b3000000-0000-4000-8000-000000000003","email":"thomas.bernard@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('b4000000-0000-4000-8000-000000000004', 'b4000000-0000-4000-8000-000000000004', 'b4000000-0000-4000-8000-000000000004', '{"sub":"b4000000-0000-4000-8000-000000000004","email":"lucas.moreau@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('b5000000-0000-4000-8000-000000000005', 'b5000000-0000-4000-8000-000000000005', 'b5000000-0000-4000-8000-000000000005', '{"sub":"b5000000-0000-4000-8000-000000000005","email":"antoine.petit@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now())
+    ON CONFLICT DO NOTHING;
+  ELSE
+    INSERT INTO auth.identities (
+      id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+    ) VALUES
+      ('4fa02732-58a2-4de7-872f-1db234899c1e', '4fa02732-58a2-4de7-872f-1db234899c1e', '{"sub":"4fa02732-58a2-4de7-872f-1db234899c1e","email":"jean.dupont@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('d587499d-3f96-4164-b37f-01b7a442646b', 'd587499d-3f96-4164-b37f-01b7a442646b', '{"sub":"d587499d-3f96-4164-b37f-01b7a442646b","email":"marc.vasseur@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('b3000000-0000-4000-8000-000000000003', 'b3000000-0000-4000-8000-000000000003', '{"sub":"b3000000-0000-4000-8000-000000000003","email":"thomas.bernard@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('b4000000-0000-4000-8000-000000000004', 'b4000000-0000-4000-8000-000000000004', '{"sub":"b4000000-0000-4000-8000-000000000004","email":"lucas.moreau@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('b5000000-0000-4000-8000-000000000005', 'b5000000-0000-4000-8000-000000000005', '{"sub":"b5000000-0000-4000-8000-000000000005","email":"antoine.petit@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now())
+    ON CONFLICT DO NOTHING;
+  END IF;
 END $$;
 
 -- ------------------------------------------------------------------------------
--- 3. INSERTION DES 5 PROFILS DANS PUBLIC.PROFILES
+-- 3. INSERTION DES PROFILS DANS PUBLIC.PROFILES
 -- ------------------------------------------------------------------------------
 INSERT INTO public.profiles (id, nom, prenom, telephone, role)
 VALUES
-  (
-    '4fa02732-58a2-4de7-872f-1db234899c1e',
-    'Dupont',
-    'Jean',
-    '06 12 34 56 78',
-    'ouvrier'
-  ),
-  (
-    'd587499d-3f96-4164-b37f-01b7a442646b',
-    'Vasseur',
-    'Marc',
-    '06 98 76 54 32',
-    'chef_equipe'
-  ),
-  (
-    'b3000000-0000-4000-8000-000000000003',
-    'Bernard',
-    'Thomas',
-    '06 45 67 89 01',
-    'ouvrier'
-  ),
-  (
-    'b4000000-0000-4000-8000-000000000004',
-    'Moreau',
-    'Lucas',
-    '06 23 45 67 89',
-    'ouvrier'
-  ),
-  (
-    'b5000000-0000-4000-8000-000000000005',
-    'Petit',
-    'Antoine',
-    '06 34 56 78 90',
-    'ouvrier'
-  )
+  ('4fa02732-58a2-4de7-872f-1db234899c1e', 'Dupont', 'Jean', '06 12 34 56 78', 'ouvrier'),
+  ('d587499d-3f96-4164-b37f-01b7a442646b', 'Vasseur', 'Marc', '06 98 76 54 32', 'chef_equipe'),
+  ('b3000000-0000-4000-8000-000000000003', 'Bernard', 'Thomas', '06 45 67 89 01', 'ouvrier'),
+  ('b4000000-0000-4000-8000-000000000004', 'Moreau', 'Lucas', '06 23 45 67 89', 'ouvrier'),
+  ('b5000000-0000-4000-8000-000000000005', 'Petit', 'Antoine', '06 34 56 78 90', 'ouvrier')
 ON CONFLICT (id) DO UPDATE SET
   nom = EXCLUDED.nom,
   prenom = EXCLUDED.prenom,
@@ -166,7 +251,7 @@ ON CONFLICT (id) DO UPDATE SET
   role = EXCLUDED.role;
 
 -- ------------------------------------------------------------------------------
--- 4. INSERTION DES 4 CHANTIERS
+-- 4. INSERTION DES 4 CHANTIERS (EN COURS, À VENIR, TERMINÉ)
 -- ------------------------------------------------------------------------------
 INSERT INTO public.chantiers (id, nom_client, adresse, statut, date_debut, date_fin, description)
 VALUES
@@ -177,7 +262,7 @@ VALUES
     'en_cours',
     CURRENT_DATE - INTERVAL '3 days',
     CURRENT_DATE + INTERVAL '12 days',
-    'Pose d''enrochements en granit, plantation d''érables du Japon et réalisation d''une terrasse en bois ipé de 45m². Prévoir motoculteur et mini-pelle.'
+    'Pose d''enrochements en granit, plantation d''érables du Japon et réalisation d''une terrasse en bois ipé de 45m².'
   ),
   (
     'c2000000-0000-4000-8000-000000000002',
@@ -195,16 +280,16 @@ VALUES
     'en_attente',
     CURRENT_DATE + INTERVAL '4 days',
     CURRENT_DATE + INTERVAL '14 days',
-    'Tranchées légères pour arrosage automatique Rain Bird 4 zones, raccordement électrovannes et plantations de 350 vivaces mellifères avec paillage chanvre.'
+    'Tranchées pour arrosage automatique Rain Bird 4 zones, plantations de 350 vivaces mellifères avec paillage chanvre.'
   ),
   (
     'c4000000-0000-4000-8000-000000000004',
     'Parc Techlid - Bassin d''agrément & Pavage',
     '120 Allée des Chênes, 69760 Limonest',
-    'en_cours',
-    CURRENT_DATE - INTERVAL '1 day',
-    CURRENT_DATE + INTERVAL '9 days',
-    'Pavage carrossable en dalles grès cérame, création d''un bassin d''ornement avec cascade filtrée et plantations aquatiques.'
+    'termine',
+    CURRENT_DATE - INTERVAL '15 days',
+    CURRENT_DATE - INTERVAL '2 days',
+    'Pavage carrossable en dalles grès cérame, création d''un bassin d''ornement avec cascade filtrée.'
   )
 ON CONFLICT (id) DO UPDATE SET
   nom_client = EXCLUDED.nom_client,
@@ -215,17 +300,10 @@ ON CONFLICT (id) DO UPDATE SET
   description = EXCLUDED.description;
 
 -- ------------------------------------------------------------------------------
--- 5. PLANNING SUR 1 BONNE SEMAINE (J-1 à J+5)
+-- 5. AFFECTATIONS DE LA SEMAINE (AUJOURD'HUI ET JOURS SUIVANTS)
 -- ------------------------------------------------------------------------------
 INSERT INTO public.affectations (chantier_id, profile_id, date_intervention)
 VALUES
-  -- Hier (CURRENT_DATE - 1)
-  ('c1000000-0000-4000-8000-000000000001', '4fa02732-58a2-4de7-872f-1db234899c1e', CURRENT_DATE - INTERVAL '1 day'), -- Jean @ Laurent
-  ('c1000000-0000-4000-8000-000000000001', 'b3000000-0000-4000-8000-000000000003', CURRENT_DATE - INTERVAL '1 day'), -- Thomas @ Laurent
-  ('c2000000-0000-4000-8000-000000000002', 'b4000000-0000-4000-8000-000000000004', CURRENT_DATE - INTERVAL '1 day'), -- Lucas @ Cèdres
-  ('c2000000-0000-4000-8000-000000000002', 'b5000000-0000-4000-8000-000000000005', CURRENT_DATE - INTERVAL '1 day'), -- Antoine @ Cèdres
-  ('c2000000-0000-4000-8000-000000000002', 'd587499d-3f96-4164-b37f-01b7a442646b', CURRENT_DATE - INTERVAL '1 day'), -- Marc (Chef) @ Cèdres
-
   -- Aujourd'hui (CURRENT_DATE)
   ('c1000000-0000-4000-8000-000000000001', '4fa02732-58a2-4de7-872f-1db234899c1e', CURRENT_DATE), -- Jean @ Laurent
   ('c1000000-0000-4000-8000-000000000001', 'b3000000-0000-4000-8000-000000000003', CURRENT_DATE), -- Thomas @ Laurent
@@ -234,181 +312,23 @@ VALUES
   ('c2000000-0000-4000-8000-000000000002', 'b5000000-0000-4000-8000-000000000005', CURRENT_DATE), -- Antoine @ Cèdres
 
   -- Demain (CURRENT_DATE + 1 day)
-  ('c1000000-0000-4000-8000-000000000001', '4fa02732-58a2-4de7-872f-1db234899c1e', CURRENT_DATE + INTERVAL '1 day'), -- Jean @ Laurent
-  ('c1000000-0000-4000-8000-000000000001', 'b3000000-0000-4000-8000-000000000003', CURRENT_DATE + INTERVAL '1 day'), -- Thomas @ Laurent
-  ('c1000000-0000-4000-8000-000000000001', 'd587499d-3f96-4164-b37f-01b7a442646b', CURRENT_DATE + INTERVAL '1 day'), -- Marc (Chef) @ Laurent
-  ('c4000000-0000-4000-8000-000000000004', 'b4000000-0000-4000-8000-000000000004', CURRENT_DATE + INTERVAL '1 day'), -- Lucas @ Techlid
-  ('c4000000-0000-4000-8000-000000000004', 'b5000000-0000-4000-8000-000000000005', CURRENT_DATE + INTERVAL '1 day'), -- Antoine @ Techlid
-
-  -- J+2 (CURRENT_DATE + 2 days)
-  ('c1000000-0000-4000-8000-000000000001', '4fa02732-58a2-4de7-872f-1db234899c1e', CURRENT_DATE + INTERVAL '2 days'), -- Jean @ Laurent
-  ('c1000000-0000-4000-8000-000000000001', 'b3000000-0000-4000-8000-000000000003', CURRENT_DATE + INTERVAL '2 days'), -- Thomas @ Laurent
-  ('c2000000-0000-4000-8000-000000000002', 'd587499d-3f96-4164-b37f-01b7a442646b', CURRENT_DATE + INTERVAL '2 days'), -- Marc @ Cèdres
-  ('c4000000-0000-4000-8000-000000000004', 'b4000000-0000-4000-8000-000000000004', CURRENT_DATE + INTERVAL '2 days'), -- Lucas @ Techlid
-  ('c4000000-0000-4000-8000-000000000004', 'b5000000-0000-4000-8000-000000000005', CURRENT_DATE + INTERVAL '2 days'), -- Antoine @ Techlid
-
-  -- J+3 (CURRENT_DATE + 3 days)
-  ('c1000000-0000-4000-8000-000000000001', '4fa02732-58a2-4de7-872f-1db234899c1e', CURRENT_DATE + INTERVAL '3 days'), -- Jean @ Laurent
-  ('c4000000-0000-4000-8000-000000000004', 'b3000000-0000-4000-8000-000000000003', CURRENT_DATE + INTERVAL '3 days'), -- Thomas @ Techlid
-  ('c4000000-0000-4000-8000-000000000004', 'b4000000-0000-4000-8000-000000000004', CURRENT_DATE + INTERVAL '3 days'), -- Lucas @ Techlid
-  ('c4000000-0000-4000-8000-000000000004', 'd587499d-3f96-4164-b37f-01b7a442646b', CURRENT_DATE + INTERVAL '3 days'), -- Marc (Chef) @ Techlid
-  ('c2000000-0000-4000-8000-000000000002', 'b5000000-0000-4000-8000-000000000005', CURRENT_DATE + INTERVAL '3 days'), -- Antoine @ Cèdres
-
-  -- J+4 (CURRENT_DATE + 4 days)
-  ('c1000000-0000-4000-8000-000000000001', '4fa02732-58a2-4de7-872f-1db234899c1e', CURRENT_DATE + INTERVAL '4 days'), -- Jean @ Laurent
-  ('c1000000-0000-4000-8000-000000000001', 'd587499d-3f96-4164-b37f-01b7a442646b', CURRENT_DATE + INTERVAL '4 days'), -- Marc (Chef) @ Laurent
-  ('c4000000-0000-4000-8000-000000000004', 'b3000000-0000-4000-8000-000000000003', CURRENT_DATE + INTERVAL '4 days'), -- Thomas @ Techlid
-  ('c4000000-0000-4000-8000-000000000004', 'b4000000-0000-4000-8000-000000000004', CURRENT_DATE + INTERVAL '4 days'), -- Lucas @ Techlid
-  ('c3000000-0000-4000-8000-000000000003', 'b5000000-0000-4000-8000-000000000005', CURRENT_DATE + INTERVAL '4 days'), -- Antoine @ Beauvallon
-
-  -- J+5 (CURRENT_DATE + 5 days)
-  ('c3000000-0000-4000-8000-000000000003', '4fa02732-58a2-4de7-872f-1db234899c1e', CURRENT_DATE + INTERVAL '5 days'), -- Jean @ Beauvallon
-  ('c3000000-0000-4000-8000-000000000003', 'b5000000-0000-4000-8000-000000000005', CURRENT_DATE + INTERVAL '5 days'), -- Antoine @ Beauvallon
-  ('c3000000-0000-4000-8000-000000000003', 'd587499d-3f96-4164-b37f-01b7a442646b', CURRENT_DATE + INTERVAL '5 days'), -- Marc (Chef) @ Beauvallon
-  ('c4000000-0000-4000-8000-000000000004', 'b3000000-0000-4000-8000-000000000003', CURRENT_DATE + INTERVAL '5 days'), -- Thomas @ Techlid
-  ('c4000000-0000-4000-8000-000000000004', 'b4000000-0000-4000-8000-000000000004', CURRENT_DATE + INTERVAL '5 days')  -- Lucas @ Techlid
+  ('c1000000-0000-4000-8000-000000000001', '4fa02732-58a2-4de7-872f-1db234899c1e', CURRENT_DATE + INTERVAL '1 day'), -- Jean
+  ('c1000000-0000-4000-8000-000000000001', 'b3000000-0000-4000-8000-000000000003', CURRENT_DATE + INTERVAL '1 day'), -- Thomas
+  ('c1000000-0000-4000-8000-000000000001', 'd587499d-3f96-4164-b37f-01b7a442646b', CURRENT_DATE + INTERVAL '1 day'), -- Marc
+  ('c2000000-0000-4000-8000-000000000002', 'b4000000-0000-4000-8000-000000000004', CURRENT_DATE + INTERVAL '1 day'), -- Lucas
+  ('c2000000-0000-4000-8000-000000000002', 'b5000000-0000-4000-8000-000000000005', CURRENT_DATE + INTERVAL '1 day')  -- Antoine
 ON CONFLICT DO NOTHING;
 
 -- ------------------------------------------------------------------------------
--- 6. POLITIQUES DE SÉCURITÉ (RLS) COMPLÈTES & ROBUSTES
--- ------------------------------------------------------------------------------
-
--- Profiles
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Authenticated users can view profiles') THEN
-    CREATE POLICY "Authenticated users can view profiles" ON public.profiles FOR SELECT TO authenticated USING (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Users can update own profile') THEN
-    CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
-  END IF;
-END $$;
-
--- Chantiers
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'chantiers' AND policyname = 'Authenticated users can view chantiers') THEN
-    CREATE POLICY "Authenticated users can view chantiers" ON public.chantiers FOR SELECT TO authenticated USING (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'chantiers' AND policyname = 'Authenticated users can insert chantiers') THEN
-    CREATE POLICY "Authenticated users can insert chantiers" ON public.chantiers FOR INSERT TO authenticated WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'chantiers' AND policyname = 'Authenticated users can update chantiers') THEN
-    CREATE POLICY "Authenticated users can update chantiers" ON public.chantiers FOR UPDATE TO authenticated USING (true);
-  END IF;
-END $$;
-
--- Affectations
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'affectations' AND policyname = 'Authenticated users can view affectations') THEN
-    CREATE POLICY "Authenticated users can view affectations" ON public.affectations FOR SELECT TO authenticated USING (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'affectations' AND policyname = 'Authenticated users can manage affectations') THEN
-    CREATE POLICY "Authenticated users can manage affectations" ON public.affectations FOR ALL TO authenticated USING (true);
-  END IF;
-END $$;
-
--- Pointages
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'pointages' AND policyname = 'Users can insert own pointages') THEN
-    CREATE POLICY "Users can insert own pointages" ON public.pointages FOR INSERT TO authenticated WITH CHECK (auth.uid() = profile_id);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'pointages' AND policyname = 'Authenticated users can view pointages') THEN
-    CREATE POLICY "Authenticated users can view pointages" ON public.pointages FOR SELECT TO authenticated USING (true);
-  END IF;
-END $$;
-
--- ------------------------------------------------------------------------------
--- 7. ÉVOLUTION DU SCHÉMA & POINTAGES D'EXEMPLE POUR LE DÉVELOPPEMENT
+-- 6. GARANTIE DU SCHÉMA POINTAGES (COLONNES HEURE_DEBUT / HEURE_FIN & RLS)
 -- ------------------------------------------------------------------------------
 ALTER TABLE public.pointages
   ADD COLUMN IF NOT EXISTS heure_debut TIME NULL,
   ADD COLUMN IF NOT EXISTS heure_fin TIME NULL;
 
--- Insertion de pointages représentatifs pour l'équipe (Hier et Aujourd'hui)
-INSERT INTO public.pointages (
-  profile_id, chantier_id, date, heure_debut, heure_fin,
-  heures_totales, temps_pause, heures_sup, synchronise_le
-) VALUES
-  -- Hier : Jean (8h normales + 1h sup)
-  (
-    '4fa02732-58a2-4de7-872f-1db234899c1e',
-    'c1000000-0000-4000-8000-000000000001',
-    CURRENT_DATE - INTERVAL '1 day',
-    '08:00:00',
-    '16:30:00',
-    8.00,
-    0.50,
-    1.00,
-    now()
-  ),
-  -- Hier : Marc (Chef)
-  (
-    'd587499d-3f96-4164-b37f-01b7a442646b',
-    'c2000000-0000-4000-8000-000000000002',
-    CURRENT_DATE - INTERVAL '1 day',
-    '07:30:00',
-    '17:00:00',
-    9.00,
-    0.50,
-    2.00,
-    now()
-  ),
-  -- Hier : Thomas
-  (
-    'b3000000-0000-4000-8000-000000000003',
-    'c1000000-0000-4000-8000-000000000001',
-    CURRENT_DATE - INTERVAL '1 day',
-    '08:00:00',
-    '15:30:00',
-    7.00,
-    0.50,
-    0.00,
-    now()
-  ),
-  -- Hier : Lucas
-  (
-    'b4000000-0000-4000-8000-000000000004',
-    'c2000000-0000-4000-8000-000000000002',
-    CURRENT_DATE - INTERVAL '1 day',
-    '08:00:00',
-    '16:30:00',
-    8.00,
-    0.50,
-    1.00,
-    now()
-  ),
-  -- Aujourd'hui : Thomas a déjà déclaré
-  (
-    'b3000000-0000-4000-8000-000000000003',
-    'c1000000-0000-4000-8000-000000000001',
-    CURRENT_DATE,
-    '08:00:00',
-    '15:30:00',
-    7.00,
-    0.50,
-    0.00,
-    now()
-  ),
-  -- Aujourd'hui : Lucas a déjà déclaré
-  (
-    'b4000000-0000-4000-8000-000000000004',
-    'c2000000-0000-4000-8000-000000000002',
-    CURRENT_DATE,
-    '07:30:00',
-    '16:30:00',
-    8.50,
-    0.50,
-    1.50,
-    now()
-  )
-ON CONFLICT (profile_id, date) DO UPDATE SET
-  chantier_id = EXCLUDED.chantier_id,
-  heure_debut = EXCLUDED.heure_debut,
-  heure_fin = EXCLUDED.heure_fin,
-  heures_totales = EXCLUDED.heures_totales,
-  temps_pause = EXCLUDED.temps_pause,
-  heures_sup = EXCLUDED.heures_sup,
-  synchronise_le = EXCLUDED.synchronise_le;
+-- ------------------------------------------------------------------------------
+-- 7. VÉRIFICATION FINALE : LA TABLE POINTAGES DOIT ÊTRE STRICTEMENT VIDE
+-- ------------------------------------------------------------------------------
+-- Aucune insertion dans public.pointages.
+
+COMMIT;

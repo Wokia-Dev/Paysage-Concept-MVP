@@ -51,7 +51,7 @@ WHERE id NOT IN (
 -- ------------------------------------------------------------------------------
 -- 2. CRÉATION / SYNCHRONISATION DES COMPTES DANS AUTH.USERS & AUTH.IDENTITIES
 -- Mot de passe unique garanti : 'Paysage2026!'
--- Compatibilité stricte GoTrue Auth (scan strings non-null + provider identities)
+-- Compatibilité GoTrue Auth (scan strings non-null + provider identities)
 -- ------------------------------------------------------------------------------
 DO $$
 DECLARE
@@ -205,16 +205,34 @@ BEGIN
     email_change = COALESCE(auth.users.email_change, '');
 END $$;
 
--- Enregistrement des identités GoTrue
-INSERT INTO auth.identities (
-  id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
-) VALUES
-  ('4fa02732-58a2-4de7-872f-1db234899c1e', '4fa02732-58a2-4de7-872f-1db234899c1e', '{"sub":"4fa02732-58a2-4de7-872f-1db234899c1e","email":"jean.dupont@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
-  ('d587499d-3f96-4164-b37f-01b7a442646b', 'd587499d-3f96-4164-b37f-01b7a442646b', '{"sub":"d587499d-3f96-4164-b37f-01b7a442646b","email":"marc.vasseur@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
-  ('b3000000-0000-4000-8000-000000000003', 'b3000000-0000-4000-8000-000000000003', '{"sub":"b3000000-0000-4000-8000-000000000003","email":"thomas.bernard@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
-  ('b4000000-0000-4000-8000-000000000004', 'b4000000-0000-4000-8000-000000000004', '{"sub":"b4000000-0000-4000-8000-000000000004","email":"lucas.moreau@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
-  ('b5000000-0000-4000-8000-000000000005', 'b5000000-0000-4000-8000-000000000005', '{"sub":"b5000000-0000-4000-8000-000000000005","email":"antoine.petit@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now())
-ON CONFLICT (provider, id) DO NOTHING;
+-- Enregistrement / synchronisation des identités GoTrue
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'auth' AND table_name = 'identities' AND column_name = 'provider_id'
+  ) THEN
+    INSERT INTO auth.identities (
+      id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+    ) VALUES
+      ('4fa02732-58a2-4de7-872f-1db234899c1e', '4fa02732-58a2-4de7-872f-1db234899c1e', '4fa02732-58a2-4de7-872f-1db234899c1e', '{"sub":"4fa02732-58a2-4de7-872f-1db234899c1e","email":"jean.dupont@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('d587499d-3f96-4164-b37f-01b7a442646b', 'd587499d-3f96-4164-b37f-01b7a442646b', 'd587499d-3f96-4164-b37f-01b7a442646b', '{"sub":"d587499d-3f96-4164-b37f-01b7a442646b","email":"marc.vasseur@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('b3000000-0000-4000-8000-000000000003', 'b3000000-0000-4000-8000-000000000003', 'b3000000-0000-4000-8000-000000000003', '{"sub":"b3000000-0000-4000-8000-000000000003","email":"thomas.bernard@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('b4000000-0000-4000-8000-000000000004', 'b4000000-0000-4000-8000-000000000004', 'b4000000-0000-4000-8000-000000000004', '{"sub":"b4000000-0000-4000-8000-000000000004","email":"lucas.moreau@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('b5000000-0000-4000-8000-000000000005', 'b5000000-0000-4000-8000-000000000005', 'b5000000-0000-4000-8000-000000000005', '{"sub":"b5000000-0000-4000-8000-000000000005","email":"antoine.petit@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now())
+    ON CONFLICT DO NOTHING;
+  ELSE
+    INSERT INTO auth.identities (
+      id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+    ) VALUES
+      ('4fa02732-58a2-4de7-872f-1db234899c1e', '4fa02732-58a2-4de7-872f-1db234899c1e', '{"sub":"4fa02732-58a2-4de7-872f-1db234899c1e","email":"jean.dupont@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('d587499d-3f96-4164-b37f-01b7a442646b', 'd587499d-3f96-4164-b37f-01b7a442646b', '{"sub":"d587499d-3f96-4164-b37f-01b7a442646b","email":"marc.vasseur@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('b3000000-0000-4000-8000-000000000003', 'b3000000-0000-4000-8000-000000000003', '{"sub":"b3000000-0000-4000-8000-000000000003","email":"thomas.bernard@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('b4000000-0000-4000-8000-000000000004', 'b4000000-0000-4000-8000-000000000004', '{"sub":"b4000000-0000-4000-8000-000000000004","email":"lucas.moreau@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now()),
+      ('b5000000-0000-4000-8000-000000000005', 'b5000000-0000-4000-8000-000000000005', '{"sub":"b5000000-0000-4000-8000-000000000005","email":"antoine.petit@paysageconcept.fr"}'::jsonb, 'email', now(), now(), now())
+    ON CONFLICT DO NOTHING;
+  END IF;
+END $$;
 
 -- ------------------------------------------------------------------------------
 -- 3. INSERTION DES PROFILS DANS PUBLIC.PROFILES
