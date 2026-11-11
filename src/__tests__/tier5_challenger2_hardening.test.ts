@@ -888,11 +888,11 @@ describe('Tier 5 Independent Adversarial Coverage Hardening (Challenger 2)', () 
       channels = channels.map((c) =>
         c.id === 'general'
           ? {
-            ...c,
-            subtitle: `Moi : ${newMessageContent}`,
-            time: "À l'instant",
-            messages: [...c.messages, newMsg],
-          }
+              ...c,
+              subtitle: `Moi : ${newMessageContent}`,
+              time: "À l'instant",
+              messages: [...c.messages, newMsg],
+            }
           : c
       );
 
