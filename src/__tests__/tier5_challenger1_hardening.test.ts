@@ -558,10 +558,10 @@ describe('Tier 5 Adversarial Coverage Hardening (Challenger 1)', () => {
         /Devis signé\.pdf/,
         'ChantierDetail must render quote placeholder card'
       );
-      assert.match(
+      assert.doesNotMatch(
         chantierDetailContent,
         /Module photos et galerie terrain à venir/,
-        'ChantierDetail must render photo placeholder card with clean typography'
+        'ChantierDetail must not render photo placeholder card'
       );
     });
 

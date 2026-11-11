@@ -97,26 +97,16 @@ describe('Milestone 3 Empirical Adversarial Stress Harness (Challenger 2)', () =
       );
     });
 
-    it('verifies Photos section in ChantierDetail is strictly a typographic placeholder for Phase 2', () => {
-      assert.match(
+    it('verifies Photos section in ChantierDetail is completely removed', () => {
+      assert.doesNotMatch(
         chantierDetailContent,
         /Photos du chantier/i,
-        'Photos section must be labeled "Photos du chantier"'
+        'Photos section must not be present in ChantierDetail'
       );
-      assert.match(
-        chantierDetailContent,
-        /Phase 2/i,
-        'Photos section must feature "Phase 2" indicator badge'
-      );
-      assert.match(
+      assert.doesNotMatch(
         chantierDetailContent,
         /Module photos et galerie terrain à venir/i,
-        'Photos section must clearly state future availability'
-      );
-      assert.match(
-        chantierDetailContent,
-        /prochaine mise à jour/i,
-        'Photos section must describe deferred scope to landscapers'
+        'Photos section placeholder must not be present in ChantierDetail'
       );
     });
 

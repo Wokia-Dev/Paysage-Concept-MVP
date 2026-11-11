@@ -227,16 +227,16 @@ describe('Milestone 3: Planning & Fiche Chantier Visual Redesign (R5)', () => {
       );
     });
 
-    it('renders simple placeholder card for future photo uploads (Phase 2)', () => {
-      assert.match(
+    it('verifies Photos du chantier section is completely removed from ChantierDetail', () => {
+      assert.doesNotMatch(
         chantierDetailContent,
         /Photos du chantier/i,
-        'ChantierDetail must render Photos section'
+        'ChantierDetail must not render Photos section'
       );
-      assert.match(
+      assert.doesNotMatch(
         chantierDetailContent,
-        /Phase 2/i,
-        'Photos section must display Phase 2 placeholder notice'
+        /Module photos et galerie terrain à venir/i,
+        'Photos section placeholder must be removed'
       );
     });
 

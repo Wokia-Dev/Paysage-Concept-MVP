@@ -686,15 +686,15 @@ describe('Tier 5 Independent Adversarial Coverage Hardening (Challenger 2)', () 
         /Devis signé\.pdf/,
         'Must display Devis signé.pdf placeholder'
       );
-      assert.match(
+      assert.doesNotMatch(
         chantierDetailContent,
         /Module photos et galerie terrain à venir/,
-        'Must display photo placeholder banner'
+        'Must not display photo placeholder banner'
       );
-      assert.match(
+      assert.doesNotMatch(
         chantierDetailContent,
         /Phase 2/,
-        'Must display Phase 2 badge on photos section'
+        'Must not display Phase 2 badge on photos section'
       );
     });
 
@@ -888,11 +888,11 @@ describe('Tier 5 Independent Adversarial Coverage Hardening (Challenger 2)', () 
       channels = channels.map((c) =>
         c.id === 'general'
           ? {
-              ...c,
-              subtitle: `Moi : ${newMessageContent}`,
-              time: "À l'instant",
-              messages: [...c.messages, newMsg],
-            }
+            ...c,
+            subtitle: `Moi : ${newMessageContent}`,
+            time: "À l'instant",
+            messages: [...c.messages, newMsg],
+          }
           : c
       );
 

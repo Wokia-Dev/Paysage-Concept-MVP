@@ -17,7 +17,6 @@ import {
   CheckCircle2,
   Briefcase,
   FileText,
-  Camera,
   MessageSquare,
   AlertCircle,
 } from 'lucide-react';
@@ -278,13 +277,12 @@ export function ChantierDetail() {
       <div className="bg-white rounded-3xl p-5 border border-sable/80 shadow-soft space-y-3.5">
         <div className="flex items-center justify-between">
           <span
-            className={`text-xs font-bold px-3 py-1 rounded-full ${
-              chantier.statut === 'en_cours'
+            className={`text-xs font-bold px-3 py-1 rounded-full ${chantier.statut === 'en_cours'
                 ? 'bg-sauge/20 text-foret border border-sauge/40'
                 : chantier.statut === 'termine'
                   ? 'bg-craie text-foret/70 border border-sable'
                   : 'bg-amber-100 text-amber-900 border border-amber-200'
-            }`}
+              }`}
           >
             {chantier.statut === 'en_cours'
               ? 'En cours'
@@ -349,11 +347,10 @@ export function ChantierDetail() {
                   <div key={member.id} className="flex flex-col items-center gap-1 shrink-0">
                     <div className="relative">
                       <div
-                        className={`w-12 h-12 rounded-full text-sm font-bold flex items-center justify-center border-2 shadow-soft ${
-                          isCurrentUser
+                        className={`w-12 h-12 rounded-full text-sm font-bold flex items-center justify-center border-2 shadow-soft ${isCurrentUser
                             ? 'bg-foret text-sable ring-2 ring-sauge/60 border-white'
                             : 'bg-foret text-sable border-white'
-                        }`}
+                          }`}
                       >
                         {member.prenom.charAt(0)}
                       </div>
@@ -381,20 +378,18 @@ export function ChantierDetail() {
                 return (
                   <div
                     key={member.id}
-                    className={`flex items-center justify-between p-2.5 rounded-2xl border ${
-                      isCurrentUser
+                    className={`flex items-center justify-between p-2.5 rounded-2xl border ${isCurrentUser
                         ? 'bg-sable/30 border-sable/90'
                         : 'bg-craie border-sable/50'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0 pr-2">
                       <div className="relative shrink-0">
                         <div
-                          className={`w-9 h-9 rounded-full text-xs font-bold flex items-center justify-center shadow-2xs ${
-                            isCurrentUser
+                          className={`w-9 h-9 rounded-full text-xs font-bold flex items-center justify-center shadow-2xs ${isCurrentUser
                               ? 'bg-foret text-sable ring-1 ring-sauge/50'
                               : 'bg-foret text-sable'
-                          }`}
+                            }`}
                         >
                           {member.prenom.charAt(0)}
                         </div>
@@ -497,32 +492,6 @@ export function ChantierDetail() {
         </div>
       </div>
 
-      {/* Section Photos : Placeholder épuré sans téléversement (aucun input file) */}
-      <div className="bg-white rounded-3xl p-5 border border-sable/80 shadow-soft space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-sable text-foret flex items-center justify-center">
-              <Camera className="w-4 h-4 text-foret" />
-            </div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-sauge">
-              Photos du chantier
-            </h2>
-          </div>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sable text-foret/70">
-            Phase 2
-          </span>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-craie border border-dashed border-sable/80 text-center space-y-1.5">
-          <p className="text-xs font-bold text-foret">
-            Module photos et galerie terrain à venir
-          </p>
-          <p className="text-[11px] text-sauge leading-relaxed max-w-sm mx-auto">
-            La capture de photos sur chantier, l'historique visuel avant/après et les constats d'avancement sont réservés pour la prochaine mise à jour de l'application.
-          </p>
-        </div>
-      </div>
-
       {/* Descriptif des travaux */}
       <div className="bg-white rounded-3xl p-5 border border-sable/80 shadow-soft space-y-2">
         <span className="text-[11px] font-bold uppercase tracking-wider text-sauge flex items-center gap-1.5">
@@ -578,11 +547,10 @@ export function ChantierDetail() {
                   key={st}
                   type="button"
                   onClick={() => handleStatutChange(st)}
-                  className={`min-h-[48px] py-2 px-1 rounded-xl font-bold transition-all cursor-pointer flex items-center justify-center ${
-                    chantier.statut === st
+                  className={`min-h-[48px] py-2 px-1 rounded-xl font-bold transition-all cursor-pointer flex items-center justify-center ${chantier.statut === st
                       ? 'bg-foret text-sable shadow-xs'
                       : 'bg-craie text-foret/70 border border-sable hover:bg-sable/40'
-                  }`}
+                    }`}
                 >
                   {st === 'en_attente' && 'En attente'}
                   {st === 'en_cours' && 'En cours'}
@@ -618,17 +586,15 @@ export function ChantierDetail() {
                     key={p.id}
                     type="button"
                     onClick={() => handleToggleWorker(p.id)}
-                    className={`w-full min-h-[48px] p-2.5 rounded-xl flex items-center justify-between text-xs transition-all cursor-pointer border ${
-                      isAssigned
+                    className={`w-full min-h-[48px] p-2.5 rounded-xl flex items-center justify-between text-xs transition-all cursor-pointer border ${isAssigned
                         ? 'bg-emerald-50 border-emerald-300 text-emerald-950 font-bold'
                         : 'bg-craie border-sable/70 text-foret/70 hover:bg-sable/30'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold ${
-                          isAssigned ? 'bg-emerald-600 text-white' : 'bg-sable text-foret'
-                        }`}
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold ${isAssigned ? 'bg-emerald-600 text-white' : 'bg-sable text-foret'
+                          }`}
                       >
                         {p.prenom.charAt(0)}
                       </div>
@@ -638,11 +604,10 @@ export function ChantierDetail() {
                     </div>
 
                     <div
-                      className={`w-6 h-6 rounded-md flex items-center justify-center border ${
-                        isAssigned
+                      className={`w-6 h-6 rounded-md flex items-center justify-center border ${isAssigned
                           ? 'bg-emerald-600 border-emerald-600 text-white'
                           : 'bg-white border-sable text-transparent'
-                      }`}
+                        }`}
                     >
                       {isAssigned ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4 text-foret/30" />}
                     </div>

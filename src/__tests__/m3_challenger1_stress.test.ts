@@ -541,10 +541,10 @@ describe('Milestone 3 Adversarial Stress Suite (Challenger 1)', () => {
         /bg-terracotta.*?text-white/,
         'Must style document badge with Terracotta color'
       );
-      assert.match(
+      assert.doesNotMatch(
         chantierDetailContent,
         /Phase 2/,
-        'Must render Phase 2 photo placeholder card'
+        'Must not render Phase 2 photo placeholder card'
       );
     });
 
