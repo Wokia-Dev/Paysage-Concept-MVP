@@ -56,3 +56,27 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Classes d'action verte & contraste plein soleil */
+.btn-action-primary {
+  background-color: var(--color-foret);
+  color: var(--color-blanc);
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(21, 48, 47, 0.2);
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.btn-action-primary:hover {
+  background-color: rgba(21, 48, 47, 0.9);
+}
+
+.btn-action-primary:active {
+  transform: scale(0.98);
+}

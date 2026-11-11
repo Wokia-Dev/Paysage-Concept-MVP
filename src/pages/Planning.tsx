@@ -497,7 +497,7 @@ export function Planning() {
                     isSelected
                       ? 'bg-foret text-sable shadow-md scale-105'
                       : day.isToday
-                        ? 'bg-terracotta/15 border border-terracotta/40 text-terracotta'
+                        ? 'bg-foret/10 border border-foret/30 text-foret font-bold'
                         : 'bg-white hover:bg-sable/40 text-foret/80 border border-sable/70'
                   }`}
                 >
@@ -506,7 +506,7 @@ export function Planning() {
                   </span>
                   <span className="text-sm font-extrabold mt-0.5">{day.dayNumber}</span>
                   {day.isToday && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-terracotta mt-0.5" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-foret mt-0.5" />
                   )}
                 </button>
               );
@@ -581,16 +581,16 @@ export function Planning() {
                       href={`https://maps.google.com/?q=${encodeURIComponent(chantier.adresse)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="min-h-[48px] flex items-center gap-2.5 text-xs text-foret/80 hover:text-terracotta bg-craie p-3 rounded-2xl border border-sable/60 active:scale-[0.99] transition-all group"
+                      className="min-h-[48px] flex items-center gap-2.5 text-xs text-foret/80 hover:text-foret bg-craie p-3 rounded-2xl border border-sable/60 active:scale-[0.99] transition-all group"
                       title="Ouvrir l'adresse dans Google Maps"
                     >
                       <div className="w-8 h-8 rounded-xl bg-white border border-sable flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
-                        <MapPin className="w-4 h-4 text-terracotta" />
+                        <MapPin className="w-4 h-4 text-foret" />
                       </div>
                       <span className="truncate font-medium text-foret flex-1">
                         {chantier.adresse}
                       </span>
-                      <ExternalLink className="w-4 h-4 text-foret/40 group-hover:text-terracotta shrink-0" />
+                      <ExternalLink className="w-4 h-4 text-foret/40 group-hover:text-foret shrink-0" />
                     </a>
 
                     {/* Équipiers assignés travaillant ensemble sur ce chantier */}
@@ -664,10 +664,10 @@ export function Planning() {
                     <div className="pt-2 border-t border-sable/40 flex justify-end">
                       <Link
                         to={`/chantier/${chantier.id}`}
-                        className="min-h-[48px] px-4 py-2 bg-craie hover:bg-white text-foret hover:text-terracotta border border-sable/80 hover:border-sauge font-bold text-xs rounded-xl inline-flex items-center gap-2 shadow-2xs transition-all active:scale-95"
+                        className="min-h-[48px] px-4 py-2 bg-craie hover:bg-white text-foret hover:text-foret border border-sable/80 hover:border-foret font-bold text-xs rounded-xl inline-flex items-center gap-2 shadow-2xs transition-all active:scale-95"
                       >
                         <span>Consulter la fiche détaillée</span>
-                        <ArrowRightIcon className="w-4 h-4 text-terracotta" />
+                        <ArrowRightIcon className="w-4 h-4 text-foret" />
                       </Link>
                     </div>
                   </div>
@@ -732,7 +732,7 @@ export function Planning() {
                 }}
                 className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
                   day.isToday
-                    ? 'bg-white border-terracotta/40 shadow-xs ring-1 ring-terracotta/20'
+                    ? 'bg-white border-foret/30 shadow-xs ring-1 ring-foret/20'
                     : 'bg-white border-sable/70 hover:border-sauge'
                 }`}
               >
@@ -742,7 +742,7 @@ export function Planning() {
                       {day.dayName} {day.dayNumber}
                     </span>
                     {day.isToday && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-terracotta text-white">
+                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-foret text-white">
                         Aujourd'hui
                       </span>
                     )}
@@ -851,7 +851,7 @@ export function Planning() {
                       isSelected
                         ? 'bg-foret text-sable border-foret shadow-xs font-bold'
                         : day.isToday
-                          ? 'bg-terracotta/10 border-terracotta/40 text-terracotta font-extrabold'
+                          ? 'bg-foret/10 border-foret/30 text-foret font-extrabold'
                           : day.isCurrentMonth
                             ? 'bg-craie border-sable/50 text-foret/80 hover:bg-sable/30'
                             : 'bg-white/40 border-transparent text-foret/30'
@@ -1016,7 +1016,7 @@ export function Planning() {
 
                 <a
                   href={`tel:${contactMember.telephone.replace(/\s+/g, '')}`}
-                  className="min-h-[48px] px-4 py-3 bg-terracotta hover:bg-terracotta/90 text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 cursor-pointer"
+                  className="min-h-[48px] px-4 py-3 bg-foret hover:bg-foret/90 text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 cursor-pointer"
                 >
                   <Phone className="w-4 h-4 text-white" />
                   <span>Téléphone</span>

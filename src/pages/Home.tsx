@@ -459,13 +459,13 @@ export function Home() {
                 href={`https://maps.google.com/?q=${encodeURIComponent(activeHeroChantier.adresse)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-start gap-2 text-xs text-foret/80 hover:text-terracotta transition-colors group p-2.5 rounded-xl bg-craie border border-sable/60 min-h-[48px]"
+                className="flex items-start gap-2 text-xs text-foret/80 hover:text-foret transition-colors group p-2.5 rounded-xl bg-craie border border-sable/60 min-h-[48px]"
               >
-                <MapPin className="w-4 h-4 text-terracotta shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                <MapPin className="w-4 h-4 text-foret shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
                 <span className="underline underline-offset-2 flex-1 font-medium">
                   {activeHeroChantier.adresse}
                 </span>
-                <Navigation className="w-3.5 h-3.5 ml-1 text-foret/40 group-hover:text-terracotta shrink-0 mt-0.5" />
+                <Navigation className="w-3.5 h-3.5 ml-1 text-foret/40 group-hover:text-foret shrink-0 mt-0.5" />
               </a>
 
               {/* Sélecteur de chantier si l'utilisateur en a plusieurs */}
@@ -492,7 +492,7 @@ export function Home() {
               <div className="flex items-center justify-between pt-1 text-xs border-t border-sable/40">
                 <Link
                   to={`/chantier/${activeHeroChantier.id}`}
-                  className="text-terracotta hover:text-terracotta/80 font-bold flex items-center gap-1 min-h-[48px]"
+                  className="text-foret hover:text-foret/80 font-bold flex items-center gap-1 min-h-[48px]"
                 >
                   <span>Consulter la fiche détaillée</span>
                   <ChevronRight className="w-4 h-4" />
@@ -699,12 +699,12 @@ export function Home() {
           </div>
         )}
 
-        {/* Bouton CTA Principal "+ Saisir des heures" en Terracotta */}
+        {/* Bouton CTA Principal "+ Saisir des heures" en Vert Forêt */}
         <button
           type="button"
           onClick={handleOpenSaisie}
           aria-label={hasSubmittedToday ? 'Modifier mes heures' : '+ Saisir des heures'}
-          className="w-full min-h-[48px] h-14 bg-terracotta hover:bg-terracotta/90 text-white font-bold text-base rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-terracotta/25 active:scale-98 transition-all cursor-pointer"
+          className="w-full min-h-[48px] h-14 bg-foret hover:bg-foret/90 text-white font-bold text-base rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-foret/25 active:scale-98 transition-all cursor-pointer"
         >
           <Plus className="w-5 h-5 stroke-[2.5]" />
           <span>{hasSubmittedToday ? 'Modifier mes heures' : 'Saisir des heures'}</span>
@@ -958,7 +958,7 @@ export function Home() {
                   {formatHours(calculateNormalHours(heuresTotales, heuresSup))}
                 </span>{' '}
                 normales +{' '}
-                <span className="font-bold text-terracotta">{formatHours(heuresSup)}</span> sup
+                <span className="font-bold text-terracotta bg-terracotta/10 px-1.5 py-0.5 rounded-md">{formatHours(heuresSup)}</span> sup
                 {tempsPause > 0 && ` • Pause : ${formatHours(tempsPause)}`}
               </div>
 
@@ -966,7 +966,7 @@ export function Home() {
               <button
                 type="submit"
                 disabled={isSubmitting || Boolean(validationError)}
-                className="w-full min-h-[48px] h-14 bg-terracotta hover:bg-terracotta/90 text-white font-bold text-base rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-terracotta/20 transition-all active:scale-98 cursor-pointer disabled:opacity-50"
+                className="w-full min-h-[48px] h-14 bg-foret hover:bg-foret/90 text-white font-bold text-base rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-foret/20 transition-all active:scale-98 cursor-pointer disabled:opacity-50"
               >
                 <Save className="w-5 h-5" />
                 <span>

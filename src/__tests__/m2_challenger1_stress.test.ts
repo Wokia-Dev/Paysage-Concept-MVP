@@ -381,7 +381,7 @@ describe('Milestone 2 Adversarial Stress Suite (Challenger 1)', () => {
 
     it('verifies submit button enforces min 48px height', () => {
       assert.match(homeContent, /type="submit"/);
-      assert.match(homeContent, /w-full\s+min-h-\[48px\]\s+h-14\s+bg-terracotta/);
+      assert.match(homeContent, /w-full\s+min-h-\[48px\]\s+h-14\s+bg-foret/);
     });
 
     it('verifies CircularProgressGauge edit target button prevents event bubbling and provides prominent tactile pill', () => {

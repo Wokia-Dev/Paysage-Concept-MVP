@@ -367,7 +367,7 @@ export function Chantiers() {
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="min-h-[48px] px-4 py-2.5 bg-terracotta hover:bg-terracotta/90 active:scale-95 text-white text-xs font-bold rounded-2xl flex items-center gap-2 shadow-md shadow-terracotta/25 transition-all cursor-pointer shrink-0"
+            className="min-h-[48px] px-4 py-2.5 bg-foret hover:bg-foret/90 active:scale-95 text-white text-xs font-bold rounded-2xl flex items-center gap-2 shadow-md shadow-foret/25 transition-all cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Nouveau chantier</span>
@@ -482,11 +482,11 @@ export function Chantiers() {
                   rel="noopener noreferrer"
                   className="min-h-[48px] flex items-center gap-2 p-2.5 rounded-2xl bg-craie hover:bg-sable/40 border border-sable/50 text-xs text-foret font-medium transition-colors group cursor-pointer"
                 >
-                  <MapPin className="w-4 h-4 text-terracotta shrink-0 group-hover:scale-110 transition-transform" />
+                  <MapPin className="w-4 h-4 text-foret shrink-0 group-hover:scale-110 transition-transform" />
                   <span className="underline-offset-2 group-hover:underline truncate">
                     {chantier.adresse}
                   </span>
-                  <Navigation className="w-3.5 h-3.5 ml-auto text-foret/40 group-hover:text-terracotta shrink-0" />
+                  <Navigation className="w-3.5 h-3.5 ml-auto text-foret/40 group-hover:text-foret shrink-0" />
                 </a>
 
                 {/* Description */}
@@ -660,7 +660,7 @@ export function Chantiers() {
                 </button>
                 <button
                   type="submit"
-                  className="min-h-[48px] px-6 py-3 rounded-2xl bg-terracotta hover:bg-terracotta/90 text-white font-bold shadow-md shadow-terracotta/25 transition-all cursor-pointer"
+                  className="min-h-[48px] px-6 py-3 rounded-2xl bg-foret hover:bg-foret/90 text-white font-bold shadow-md shadow-foret/25 transition-all cursor-pointer"
                 >
                   Créer le chantier
                 </button>

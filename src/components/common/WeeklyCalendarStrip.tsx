@@ -174,7 +174,7 @@ export const WeeklyCalendarStrip: React.FC<WeeklyCalendarStripProps> = ({
             {day.isToday && (
               <span
                 className={`w-1.5 h-1.5 rounded-full absolute bottom-1 ${
-                  day.isSelected ? 'bg-terracotta ring-1 ring-white' : 'bg-terracotta'
+                  day.isSelected ? 'bg-foret ring-1 ring-white' : 'bg-sauge'
                 }`}
                 title="Aujourd'hui"
               />

@@ -201,7 +201,7 @@ export function ChantierDetail() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="min-h-[48px] px-4 py-2 text-xs font-bold text-terracotta underline cursor-pointer"
+          className="min-h-[48px] px-4 py-2 text-xs font-bold text-foret underline cursor-pointer"
         >
           Retourner au planning
         </button>
@@ -258,7 +258,7 @@ export function ChantierDetail() {
             href={`https://maps.google.com/?q=${encodeURIComponent(chantier.adresse)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-full bg-terracotta text-white shadow-soft flex items-center justify-center hover:bg-terracotta/90 active:scale-95 transition-all cursor-pointer"
+            className="w-12 h-12 min-w-[48px] min-h-[48px] rounded-full bg-foret text-white shadow-soft flex items-center justify-center hover:bg-foret/90 active:scale-95 transition-all cursor-pointer"
             title="Lancer le GPS"
           >
             <Navigation className="w-5 h-5" />
@@ -307,7 +307,7 @@ export function ChantierDetail() {
           href={`https://maps.google.com/?q=${encodeURIComponent(chantier.adresse)}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full min-h-[48px] py-3 px-4 bg-terracotta hover:bg-terracotta/90 active:scale-98 text-white font-bold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-terracotta/20 transition-all cursor-pointer"
+          className="w-full min-h-[48px] py-3 px-4 bg-foret hover:bg-foret/90 active:scale-98 text-white font-bold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-foret/20 transition-all cursor-pointer"
         >
           <Navigation className="w-4 h-4" />
           <span>Lancer la navigation GPS (Waze / Google Maps)</span>
@@ -315,7 +315,7 @@ export function ChantierDetail() {
 
         {/* Adresse formatée avec icône MapPin */}
         <div className="p-3 bg-craie rounded-2xl border border-sable/60 flex items-start gap-2.5 text-xs text-foret/80 font-medium">
-          <MapPin className="w-4 h-4 text-terracotta shrink-0 mt-0.5" />
+          <MapPin className="w-4 h-4 text-foret shrink-0 mt-0.5" />
           <span className="leading-relaxed">{chantier.adresse}</span>
         </div>
       </div>
@@ -423,7 +423,7 @@ export function ChantierDetail() {
                           {/* Bouton Message SMS direct vers l'équipier */}
                           <a
                             href={`sms:${member.telephone.replace(/\s+/g, '')}`}
-                            className="min-w-[48px] min-h-[48px] rounded-xl bg-white border border-sable text-foret hover:text-terracotta hover:border-sauge active:scale-95 transition-all flex items-center justify-center shadow-2xs cursor-pointer"
+                            className="min-w-[48px] min-h-[48px] rounded-xl bg-white border border-sable text-foret hover:text-foret hover:border-foret active:scale-95 transition-all flex items-center justify-center shadow-2xs cursor-pointer"
                             title={`Envoyer un SMS à ${member.prenom}`}
                             aria-label={`Envoyer un SMS à ${member.prenom}`}
                           >

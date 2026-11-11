@@ -63,7 +63,7 @@ export const DateSelectorPill: React.FC<DateSelectorPillProps> = ({
       <div className="flex items-center gap-1.5 px-2 py-1 text-center select-none">
         <Calendar
           className={`w-3.5 h-3.5 shrink-0 ${
-            isHeader ? 'text-sauge' : 'text-terracotta'
+            isHeader ? 'text-sauge' : 'text-foret'
           }`}
         />
         <span
@@ -77,7 +77,7 @@ export const DateSelectorPill: React.FC<DateSelectorPillProps> = ({
           <button
             type="button"
             onClick={onToday}
-            className="ml-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-terracotta text-white hover:bg-terracotta/90 transition-colors cursor-pointer"
+            className="ml-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-foret text-white hover:bg-foret/90 transition-colors cursor-pointer"
             title="Revenir à aujourd'hui"
           >
             Aujourd'hui
