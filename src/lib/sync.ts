@@ -42,14 +42,14 @@ class SyncEngine {
   constructor() {
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => {
-        this.triggerSync().catch(() => { });
-        this.pullRemoteData().catch(() => { });
+        this.triggerSync().catch(() => {});
+        this.pullRemoteData().catch(() => {});
       });
       // Initialise le seed si nécessaire et récupère les données fraîches de Supabase
       ensureSeedData()
         .then(() => {
           if (navigator.onLine) {
-            this.pullRemoteData().catch(() => { });
+            this.pullRemoteData().catch(() => {});
           }
         })
         .catch(console.error);
@@ -105,7 +105,7 @@ class SyncEngine {
 
     // Déclenchement automatique de la synchronisation si en ligne
     if (typeof navigator !== 'undefined' && navigator.onLine) {
-      this.triggerSync().catch(() => { });
+      this.triggerSync().catch(() => {});
     }
 
     return pointage;

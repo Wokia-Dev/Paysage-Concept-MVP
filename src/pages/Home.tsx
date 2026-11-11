@@ -932,10 +932,11 @@ export function Home() {
                       key={val}
                       type="button"
                       onClick={() => handleDebutChange(val)}
-                      className={`min-h-[48px] px-3 font-bold rounded-xl border transition-colors cursor-pointer text-xs ${heureDebut === val
+                      className={`min-h-[48px] px-3 font-bold rounded-xl border transition-colors cursor-pointer text-xs ${
+                        heureDebut === val
                           ? 'bg-foret text-white border-foret shadow-xs'
                           : 'bg-white text-foret/80 border-sable hover:bg-sable/50'
-                        }`}
+                      }`}
                     >
                       {val.replace(':', 'h')}
                     </button>
@@ -999,10 +1000,11 @@ export function Home() {
                       key={val}
                       type="button"
                       onClick={() => handleFinChange(val)}
-                      className={`min-h-[48px] px-3 font-bold rounded-xl border transition-colors cursor-pointer text-xs ${heureFin === val
+                      className={`min-h-[48px] px-3 font-bold rounded-xl border transition-colors cursor-pointer text-xs ${
+                        heureFin === val
                           ? 'bg-foret text-white border-foret shadow-xs'
                           : 'bg-white text-foret/80 border-sable hover:bg-sable/50'
-                        }`}
+                      }`}
                     >
                       {val.replace(':', 'h')}
                     </button>
@@ -1054,10 +1056,11 @@ export function Home() {
                       key={p.val}
                       type="button"
                       onClick={() => handlePauseChange(p.val)}
-                      className={`min-h-[48px] px-3 font-bold rounded-xl border transition-colors cursor-pointer text-xs ${tempsPause === p.val
+                      className={`min-h-[48px] px-3 font-bold rounded-xl border transition-colors cursor-pointer text-xs ${
+                        tempsPause === p.val
                           ? 'bg-foret text-white border-foret shadow-xs'
                           : 'bg-white text-foret/80 border-sable hover:bg-sable/50'
-                        }`}
+                      }`}
                     >
                       {p.label}
                     </button>
@@ -1098,10 +1101,11 @@ export function Home() {
                       <span className="text-[10px] text-sauge font-semibold">normales</span>
                     </div>
                     <div>
-                      <span className={`inline-block text-[11px] font-extrabold px-2 py-0.5 rounded-lg border ${heuresSup > 0
+                      <span className={`inline-block text-[11px] font-extrabold px-2 py-0.5 rounded-lg border ${
+                        heuresSup > 0
                           ? 'bg-terracotta/15 text-terracotta border-terracotta/30'
                           : 'bg-white/60 text-foret/50 border-sable/60'
-                        }`}>
+                      }`}>
                         {heuresSup > 0 ? `+${formatHours(heuresSup)} sup` : '0h sup'}
                       </span>
                     </div>
@@ -1127,8 +1131,9 @@ export function Home() {
                     )}
                   </span>
                   <ChevronDown
-                    className={`w-4 h-4 text-foret/60 transition-transform duration-200 ${showAdvancedDetails ? 'rotate-180' : ''
-                      }`}
+                    className={`w-4 h-4 text-foret/60 transition-transform duration-200 ${
+                      showAdvancedDetails ? 'rotate-180' : ''
+                    }`}
                   />
                 </button>
 
@@ -1215,10 +1220,11 @@ export function Home() {
                             key={val}
                             type="button"
                             onClick={() => handleSupChange(val)}
-                            className={`min-h-[48px] px-3 font-bold rounded-xl border transition-colors cursor-pointer text-xs ${heuresSup === val
+                            className={`min-h-[48px] px-3 font-bold rounded-xl border transition-colors cursor-pointer text-xs ${
+                              heuresSup === val
                                 ? 'bg-foret text-white border-foret shadow-xs'
                                 : 'bg-craie text-foret/80 border-sable hover:bg-sable/50'
-                              }`}
+                            }`}
                           >
                             {val === 0 ? '0h (Aucune)' : `+${formatHours(val)}`}
                           </button>
