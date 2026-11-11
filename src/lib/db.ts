@@ -226,6 +226,124 @@ export function generateInitialAffectations(): Affectation[] {
 }
 
 /**
+ * Génère des déclarations d'heures de test avec plages horaires (heure_debut, heure_fin).
+ */
+export function generateSamplePointages(): PointageLocal[] {
+  const yesterday = getTodayDateString(-1);
+  const today = getTodayDateString(0);
+  const now = new Date().toISOString();
+
+  return [
+    // Hier
+    {
+      id: 'pt-sample-jean-hier',
+      profile_id: PROFILE_IDS.JEAN,
+      chantier_id: CHANTIER_IDS.LAURENT,
+      date: yesterday,
+      heure_debut: '08:00',
+      heure_fin: '16:30',
+      heures_totales: 8.0,
+      temps_pause: 0.5,
+      heures_sup: 1.0,
+      synchronise_le: now,
+      synced: true,
+      error: null,
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: 'pt-sample-marc-hier',
+      profile_id: PROFILE_IDS.MARC,
+      chantier_id: CHANTIER_IDS.LAURENT,
+      date: yesterday,
+      heure_debut: '07:30',
+      heure_fin: '17:00',
+      heures_totales: 9.0,
+      temps_pause: 0.5,
+      heures_sup: 2.0,
+      synchronise_le: now,
+      synced: true,
+      error: null,
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: 'pt-sample-thomas-hier',
+      profile_id: PROFILE_IDS.THOMAS,
+      chantier_id: CHANTIER_IDS.LAURENT,
+      date: yesterday,
+      heure_debut: '08:00',
+      heure_fin: '15:30',
+      heures_totales: 7.0,
+      temps_pause: 0.5,
+      heures_sup: 0.0,
+      synchronise_le: now,
+      synced: true,
+      error: null,
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: 'pt-sample-lucas-hier',
+      profile_id: PROFILE_IDS.LUCAS,
+      chantier_id: CHANTIER_IDS.CEDRES,
+      date: yesterday,
+      heure_debut: '08:00',
+      heure_fin: '16:30',
+      heures_totales: 8.0,
+      temps_pause: 0.5,
+      heures_sup: 1.0,
+      synchronise_le: now,
+      synced: true,
+      error: null,
+      created_at: now,
+      updated_at: now,
+    },
+    // Aujourd'hui (Thomas & Lucas ont déjà pointé, Jean est non pointé pour tester la saisie neuve)
+    {
+      id: 'pt-sample-thomas-today',
+      profile_id: PROFILE_IDS.THOMAS,
+      chantier_id: CHANTIER_IDS.LAURENT,
+      date: today,
+      heure_debut: '08:00',
+      heure_fin: '15:30',
+      heures_totales: 7.0,
+      temps_pause: 0.5,
+      heures_sup: 0.0,
+      synchronise_le: now,
+      synced: true,
+      error: null,
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: 'pt-sample-lucas-today',
+      profile_id: PROFILE_IDS.LUCAS,
+      chantier_id: CHANTIER_IDS.CEDRES,
+      date: today,
+      heure_debut: '07:30',
+      heure_fin: '16:30',
+      heures_totales: 8.5,
+      temps_pause: 0.5,
+      heures_sup: 1.5,
+      synchronise_le: now,
+      synced: true,
+      error: null,
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+}
+
+/**
+ * Initialise ou recharge le jeu de pointages d'exemple pour le dev.
+ */
+export async function seedSamplePointages(): Promise<void> {
+  const samples = generateSamplePointages();
+  await db.pointages.bulkPut(samples);
+}
+
+/**
  * Initialise le cache local Dexie si la base est vide.
  */
 export async function ensureSeedData() {

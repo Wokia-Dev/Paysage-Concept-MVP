@@ -11,6 +11,15 @@ import {
   calculateNormalHours,
   getStoredDailyTarget,
   setStoredDailyTarget,
+  DEFAULT_PAUSE,
+  normalizeTimeString,
+  decimalToTimeString,
+  calculateAmplitude,
+  calculateDurationFromRange,
+  validateTimeRange,
+  adjustTimeString,
+  getLastUsedTimeRange,
+  setLastUsedTimeRange,
   type WorkerDailyStatus,
 } from '../lib/hours';
 import type { Chantier, PointageLocal } from '../types/database';
@@ -40,6 +49,8 @@ import {
   X,
   FolderKanban,
   CloudSun,
+  ChevronDown,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -68,12 +79,29 @@ export function Home() {
   );
   const [isEditingTarget, setIsEditingTarget] = useState(false);
 
-  // Champs de saisie déclarative
-  const [heuresTotales, setHeuresTotales] = useState<number>(7);
-  const [tempsPause, setTempsPause] = useState<number>(1);
+  // Champs de saisie déclarative par plages horaires
+  const [heureDebut, setHeureDebut] = useState<string>('');
+  const [heureFin, setHeureFin] = useState<string>('');
+  const [tempsPause, setTempsPause] = useState<number>(DEFAULT_PAUSE);
   const [heuresSup, setHeuresSup] = useState<number>(0);
   const [isSupManuallyEdited, setIsSupManuallyEdited] = useState(false);
+  const [showAdvancedDetails, setShowAdvancedDetails] = useState(false);
   const [hasLoadedInitial, setHasLoadedInitial] = useState(false);
+
+  // Dernières heures habituelles en mémoire locale
+  const lastUsedTimeRange = useMemo(() => {
+    return getLastUsedTimeRange(profile?.id);
+  }, [profile?.id, isModalOpen]);
+
+  // Amplitude et durée totale nette travaillée (déduite de la pause)
+  const calculatedAmplitude = useMemo(() => {
+    return calculateAmplitude(heureDebut, heureFin);
+  }, [heureDebut, heureFin]);
+
+  const heuresTotales = useMemo(() => {
+    if (!heureDebut || !heureFin) return 0;
+    return calculateDurationFromRange(heureDebut, heureFin, tempsPause);
+  }, [heureDebut, heureFin, tempsPause]);
 
   // Données de supervision pour chef d'équipe / admin
   const [teamStatuses, setTeamStatuses] = useState<WorkerDailyStatus[]>([]);
@@ -126,15 +154,34 @@ export function Home() {
 
       // Pré-remplissage des champs du formulaire
       if (existingPt) {
-        setHeuresTotales(Number(existingPt.heures_totales) || 0);
-        setTempsPause(Number(existingPt.temps_pause) || 0);
-        setHeuresSup(Number(existingPt.heures_sup) || 0);
+        const deb = existingPt.heure_debut ? normalizeTimeString(existingPt.heure_debut) : '';
+        const fin = existingPt.heure_fin ? normalizeTimeString(existingPt.heure_fin) : '';
+        const tot = Number(existingPt.heures_totales) || 0;
+        const pause = Number.isFinite(existingPt.temps_pause) ? Number(existingPt.temps_pause) : DEFAULT_PAUSE;
+        const sup = Number(existingPt.heures_sup) || 0;
+
+        if (deb && fin) {
+          setHeureDebut(deb);
+          setHeureFin(fin);
+        } else if (tot > 0) {
+          setHeureDebut('08:00');
+          setHeureFin(decimalToTimeString(8.0 + tot + pause));
+        } else {
+          setHeureDebut('');
+          setHeureFin('');
+        }
+        setTempsPause(pause);
+        setHeuresSup(sup);
         setIsSupManuallyEdited(true);
+        if (sup > 0) setShowAdvancedDetails(true);
       } else if (!hasLoadedInitial || selectedDateStr !== todayStr) {
-        setHeuresTotales(currentTarget);
-        setTempsPause(1);
-        setHeuresSup(calculateAutoOvertime(currentTarget, currentTarget));
+        // Jour non pointé : démarrer sur des champs horaires vides
+        setHeureDebut('');
+        setHeureFin('');
+        setTempsPause(DEFAULT_PAUSE);
+        setHeuresSup(0);
         setIsSupManuallyEdited(false);
+        setShowAdvancedDetails(false);
       }
       setHasLoadedInitial(true);
 
@@ -186,11 +233,26 @@ export function Home() {
     }
   }, [selectedChantier]);
 
-  // Validation en temps réel
-  const runValidation = (total: number, pause: number, sup: number): boolean => {
-    const res = validateDailyHours(total, pause, sup);
-    if (!res.valid) {
-      setValidationError(res.error || 'Saisie non valide');
+  // Validation en temps réel de la plage horaire et des totaux
+  const runValidation = (
+    debut: string,
+    fin: string,
+    pause: number,
+    sup: number
+  ): boolean => {
+    if (!debut || !fin) {
+      setValidationError("Veuillez renseigner l'heure d'arrivée et l'heure de départ.");
+      return false;
+    }
+    const rangeRes = validateTimeRange(debut, fin, pause);
+    if (!rangeRes.valid) {
+      setValidationError(rangeRes.error || 'Plage horaire non valide');
+      return false;
+    }
+    const net = calculateDurationFromRange(debut, fin, pause);
+    const dailyRes = validateDailyHours(net, pause, sup);
+    if (!dailyRes.valid) {
+      setValidationError(dailyRes.error || 'Saisie non valide');
       return false;
     }
     setValidationError(null);
@@ -205,39 +267,72 @@ export function Home() {
     if (!isSupManuallyEdited) {
       const autoSup = calculateAutoOvertime(heuresTotales, clamped);
       setHeuresSup(autoSup);
-      runValidation(heuresTotales, tempsPause, autoSup);
+      runValidation(heureDebut, heureFin, tempsPause, autoSup);
     }
   };
 
-  const handleTotalChange = (val: number) => {
-    const clamped = Math.max(0, Math.min(24, Math.round(val * 100) / 100));
-    setHeuresTotales(clamped);
+  const handleDebutChange = (newDebut: string) => {
+    setHeureDebut(newDebut);
+    const net = calculateDurationFromRange(newDebut, heureFin, tempsPause);
+    if (!isSupManuallyEdited) {
+      const autoSup = calculateAutoOvertime(net, dailyTarget);
+      setHeuresSup(autoSup);
+      runValidation(newDebut, heureFin, tempsPause, autoSup);
+    } else {
+      runValidation(newDebut, heureFin, tempsPause, heuresSup);
+    }
+  };
 
-    const autoSup = calculateAutoOvertime(clamped, dailyTarget);
-    setHeuresSup(autoSup);
-    setIsSupManuallyEdited(false);
+  const handleFinChange = (newFin: string) => {
+    setHeureFin(newFin);
+    const net = calculateDurationFromRange(heureDebut, newFin, tempsPause);
+    if (!isSupManuallyEdited) {
+      const autoSup = calculateAutoOvertime(net, dailyTarget);
+      setHeuresSup(autoSup);
+      runValidation(heureDebut, newFin, tempsPause, autoSup);
+    } else {
+      runValidation(heureDebut, newFin, tempsPause, heuresSup);
+    }
+  };
 
-    runValidation(clamped, tempsPause, autoSup);
+  const handleApplyPresetRange = (debut: string, fin: string) => {
+    setHeureDebut(debut);
+    setHeureFin(fin);
+    const net = calculateDurationFromRange(debut, fin, tempsPause);
+    if (!isSupManuallyEdited) {
+      const autoSup = calculateAutoOvertime(net, dailyTarget);
+      setHeuresSup(autoSup);
+      runValidation(debut, fin, tempsPause, autoSup);
+    } else {
+      runValidation(debut, fin, tempsPause, heuresSup);
+    }
   };
 
   const handlePauseChange = (val: number) => {
     const clamped = Math.max(0, Math.min(24, Math.round(val * 100) / 100));
     setTempsPause(clamped);
-    runValidation(heuresTotales, clamped, heuresSup);
+    const net = calculateDurationFromRange(heureDebut, heureFin, clamped);
+    if (!isSupManuallyEdited) {
+      const autoSup = calculateAutoOvertime(net, dailyTarget);
+      setHeuresSup(autoSup);
+      runValidation(heureDebut, heureFin, clamped, autoSup);
+    } else {
+      runValidation(heureDebut, heureFin, clamped, heuresSup);
+    }
   };
 
   const handleSupChange = (val: number) => {
     const clamped = Math.max(0, Math.min(24, Math.round(val * 100) / 100));
     setHeuresSup(clamped);
     setIsSupManuallyEdited(true);
-    runValidation(heuresTotales, tempsPause, clamped);
+    runValidation(heureDebut, heureFin, tempsPause, clamped);
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!profile) return;
 
-    if (!runValidation(heuresTotales, tempsPause, heuresSup)) {
+    if (!runValidation(heureDebut, heureFin, tempsPause, heuresSup)) {
       return;
     }
 
@@ -247,11 +342,14 @@ export function Home() {
         profile_id: profile.id,
         chantier_id: selectedChantier?.id || null,
         date: selectedDateStr,
+        heure_debut: heureDebut,
+        heure_fin: heureFin,
         heures_totales: heuresTotales,
         temps_pause: tempsPause,
         heures_sup: heuresSup,
       });
 
+      setLastUsedTimeRange(heureDebut, heureFin, profile.id);
       setSubmitSuccess(true);
       setIsModalOpen(false);
       setTimeout(() => setSubmitSuccess(false), 3000);
@@ -751,7 +849,7 @@ export function Home() {
               </button>
             </div>
 
-            {/* Formulaire déclaratif */}
+            {/* Formulaire déclaratif par plages horaires */}
             <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
               {/* Message d'erreur de validation */}
               {validationError && (
@@ -761,68 +859,168 @@ export function Home() {
                 </div>
               )}
 
-              {/* Champ 1 : Heures totales */}
-              <div className="space-y-2.5 bg-craie p-3.5 rounded-2xl border border-sable/70">
+              {/* Raccourci vers les derniers horaires habituels si disponibles */}
+              {lastUsedTimeRange && (
+                <div className="flex items-center justify-between p-2.5 bg-sable/30 rounded-2xl border border-sable/70 text-xs">
+                  <div className="flex items-center gap-1.5 text-foret font-semibold">
+                    <Sparkles className="w-4 h-4 text-terracotta shrink-0" />
+                    <span>Horaires habituels ({lastUsedTimeRange.heureDebut.replace(':', 'h')} - {lastUsedTimeRange.heureFin.replace(':', 'h')})</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPresetRange(lastUsedTimeRange.heureDebut, lastUsedTimeRange.heureFin)}
+                    className="min-h-[48px] px-3.5 py-2 rounded-xl bg-foret text-white font-bold text-xs hover:bg-foret/90 cursor-pointer active:scale-95 transition-all shadow-xs"
+                  >
+                    Appliquer
+                  </button>
+                </div>
+              )}
+
+              {/* Champ 1 : Heure d'arrivée */}
+              <div className="space-y-2 bg-craie p-3.5 rounded-2xl border border-sable/80">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foret">
-                    Heures totales travaillées (heures sup incluses) :
-                  </span>
+                  <label htmlFor="input-heure-arrivee" className="text-xs font-bold text-foret">
+                    Heure d'arrivée :
+                  </label>
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
-                      onClick={() => handleTotalChange(heuresTotales - 0.25)}
+                      onClick={() => handleDebutChange(adjustTimeString(heureDebut || '08:00', -15))}
                       className="min-w-[48px] min-h-[48px] w-12 h-12 rounded-xl bg-white hover:bg-sable border border-sable flex items-center justify-center text-foret cursor-pointer shadow-xs active:scale-95"
-                      aria-label="Diminuer heures totales"
+                      aria-label="Diminuer heure d'arrivée"
                     >
                       <Minus className="w-4 h-4" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleTotalChange(heuresTotales + 0.25)}
+                      onClick={() => handleDebutChange(adjustTimeString(heureDebut || '08:00', 15))}
                       className="min-w-[48px] min-h-[48px] w-12 h-12 rounded-xl bg-white hover:bg-sable border border-sable flex items-center justify-center text-foret cursor-pointer shadow-xs active:scale-95"
-                      aria-label="Augmenter heures totales"
+                      aria-label="Augmenter heure d'arrivée"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                {/* Grand affichage ergonomique sans décimale brute */}
-                <div className="flex items-center justify-between bg-white rounded-xl p-3 border border-sable shadow-2xs">
-                  <span className="text-xs font-bold text-sauge">Durée totale</span>
-                  <span className="text-2xl font-black text-foret tracking-tight">
-                    {formatHours(heuresTotales)}
-                  </span>
+                {/* Conteneur tactile interactif stylisé avec input transparent superposé */}
+                <div className="relative w-full min-h-[52px] h-[52px] bg-white rounded-2xl border-2 transition-all flex items-center px-3.5 gap-3 cursor-pointer shadow-2xs border-sable hover:border-foret/40 focus-within:border-foret focus-within:ring-2 focus-within:ring-foret/20">
+                  <div className="w-8 h-8 rounded-xl bg-foret/10 flex items-center justify-center text-foret shrink-0">
+                    <Clock className="w-4 h-4 stroke-[2.5]" />
+                  </div>
+                  <div className="flex-1 flex flex-col justify-center">
+                    <span className="text-[10px] font-bold text-sauge uppercase tracking-wider leading-none">
+                      Arrivée
+                    </span>
+                    <span className={`text-xl font-black tracking-tight leading-tight ${heureDebut ? 'text-foret' : 'text-foret/40 font-semibold'}`}>
+                      {heureDebut ? heureDebut.replace(':', 'h') : 'Choisir l\'heure'}
+                    </span>
+                  </div>
+                  <input
+                    id="input-heure-arrivee"
+                    type="time"
+                    value={heureDebut}
+                    onChange={(e) => handleDebutChange(e.target.value)}
+                    className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                    aria-label="Choisir l'heure d'arrivée"
+                  />
                 </div>
 
-                <p className="text-[10px] text-sauge leading-tight">
-                  Total de votre temps travaillé dans la journée. Vos heures supplémentaires sont déjà incluses dans ce chiffre.
-                </p>
-
-                {/* Boutons rapides pour heures totales */}
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {[6, 7, 7.5, 8, 8.5, 9].map((val) => (
+                {/* Boutons rapides pour heure d'arrivée */}
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {['07:00', '07:30', '08:00', '08:30'].map((val) => (
                     <button
                       key={val}
                       type="button"
-                      onClick={() => handleTotalChange(val)}
-                      className={`min-h-[48px] px-3 font-bold rounded-xl border transition-colors cursor-pointer text-xs ${heuresTotales === val
-                        ? 'bg-foret text-white border-foret shadow-xs'
-                        : 'bg-white text-foret/80 border-sable hover:bg-sable/50'
+                      onClick={() => handleDebutChange(val)}
+                      className={`min-h-[48px] px-3 font-bold rounded-xl border transition-colors cursor-pointer text-xs ${heureDebut === val
+                          ? 'bg-foret text-white border-foret shadow-xs'
+                          : 'bg-white text-foret/80 border-sable hover:bg-sable/50'
                         }`}
                     >
-                      {formatHours(val)}
+                      {val.replace(':', 'h')}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Champ 2 : Temps de pause */}
-              <div className="space-y-2.5 bg-craie p-3.5 rounded-2xl border border-sable/70">
+              {/* Champ 2 : Heure de départ */}
+              <div className="space-y-2 bg-craie p-3.5 rounded-2xl border border-sable/80">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foret">
-                    Durée de pause / déjeuner :
-                  </span>
+                  <label htmlFor="input-heure-depart" className="text-xs font-bold text-foret">
+                    Heure de départ :
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleFinChange(adjustTimeString(heureFin || '17:00', -15))}
+                      className="min-w-[48px] min-h-[48px] w-12 h-12 rounded-xl bg-white hover:bg-sable border border-sable flex items-center justify-center text-foret cursor-pointer shadow-xs active:scale-95"
+                      aria-label="Diminuer heure de départ"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleFinChange(adjustTimeString(heureFin || '17:00', 15))}
+                      className="min-w-[48px] min-h-[48px] w-12 h-12 rounded-xl bg-white hover:bg-sable border border-sable flex items-center justify-center text-foret cursor-pointer shadow-xs active:scale-95"
+                      aria-label="Augmenter heure de départ"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Conteneur tactile interactif stylisé avec input transparent superposé */}
+                <div className="relative w-full min-h-[52px] h-[52px] bg-white rounded-2xl border-2 transition-all flex items-center px-3.5 gap-3 cursor-pointer shadow-2xs border-sable hover:border-foret/40 focus-within:border-foret focus-within:ring-2 focus-within:ring-foret/20">
+                  <div className="w-8 h-8 rounded-xl bg-foret/10 flex items-center justify-center text-foret shrink-0">
+                    <Clock className="w-4 h-4 stroke-[2.5]" />
+                  </div>
+                  <div className="flex-1 flex flex-col justify-center">
+                    <span className="text-[10px] font-bold text-sauge uppercase tracking-wider leading-none">
+                      Départ
+                    </span>
+                    <span className={`text-xl font-black tracking-tight leading-tight ${heureFin ? 'text-foret' : 'text-foret/40 font-semibold'}`}>
+                      {heureFin ? heureFin.replace(':', 'h') : 'Choisir l\'heure'}
+                    </span>
+                  </div>
+                  <input
+                    id="input-heure-depart"
+                    type="time"
+                    value={heureFin}
+                    onChange={(e) => handleFinChange(e.target.value)}
+                    className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                    aria-label="Choisir l'heure de départ"
+                  />
+                </div>
+
+                {/* Boutons rapides pour heure de départ */}
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {['16:30', '17:00', '17:30', '18:00'].map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => handleFinChange(val)}
+                      className={`min-h-[48px] px-3 font-bold rounded-xl border transition-colors cursor-pointer text-xs ${heureFin === val
+                          ? 'bg-foret text-white border-foret shadow-xs'
+                          : 'bg-white text-foret/80 border-sable hover:bg-sable/50'
+                        }`}
+                    >
+                      {val.replace(':', 'h')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Champ 3 : Temps de pause (compact) */}
+              <div className="bg-craie p-3 rounded-2xl border border-sable/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-foret">
+                      Temps de pause :
+                    </span>
+                    <span className="text-xs font-black text-foret bg-white px-2 py-0.5 rounded-lg border border-sable shadow-2xs">
+                      {tempsPause === 0 ? 'Sans pause' : formatHours(tempsPause)}
+                    </span>
+                  </div>
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
@@ -843,16 +1041,8 @@ export function Home() {
                   </div>
                 </div>
 
-                {/* Grand affichage ergonomique */}
-                <div className="flex items-center justify-between bg-white rounded-xl p-3 border border-sable shadow-2xs">
-                  <span className="text-xs font-bold text-sauge">Pause repas / coupure</span>
-                  <span className="text-xl font-black text-foret tracking-tight">
-                    {tempsPause === 0 ? 'Sans pause' : formatHours(tempsPause)}
-                  </span>
-                </div>
-
                 {/* Boutons rapides pour pause */}
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {[
                     { label: 'Sans pause', val: 0 },
                     { label: '15 min', val: 0.25 },
@@ -865,8 +1055,8 @@ export function Home() {
                       type="button"
                       onClick={() => handlePauseChange(p.val)}
                       className={`min-h-[48px] px-3 font-bold rounded-xl border transition-colors cursor-pointer text-xs ${tempsPause === p.val
-                        ? 'bg-foret text-white border-foret shadow-xs'
-                        : 'bg-white text-foret/80 border-sable hover:bg-sable/50'
+                          ? 'bg-foret text-white border-foret shadow-xs'
+                          : 'bg-white text-foret/80 border-sable hover:bg-sable/50'
                         }`}
                     >
                       {p.label}
@@ -875,97 +1065,174 @@ export function Home() {
                 </div>
               </div>
 
-              {/* Champ 3 : Heures supplémentaires */}
-              <div className="space-y-2.5 bg-craie p-3.5 rounded-2xl border border-sable/70">
+              {/* Carte de résultat principale mise en avant avec vert Forêt & Sauge */}
+              <div className="bg-gradient-to-br from-foret/10 via-sauge/15 to-craie rounded-2xl p-4 border-2 border-foret/20 shadow-xs space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foret">
-                    Dont heures supplémentaires (incluses) :
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-foret flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-emerald-600" />
+                    Heures totales travaillées (heures sup incluses) :
                   </span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => handleSupChange(heuresSup - 0.25)}
-                      className="min-w-[48px] min-h-[48px] w-12 h-12 rounded-xl bg-white hover:bg-sable border border-sable flex items-center justify-center text-foret cursor-pointer shadow-xs active:scale-95"
-                      aria-label="Diminuer heures sup"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSupChange(heuresSup + 0.25)}
-                      className="min-w-[48px] min-h-[48px] w-12 h-12 rounded-xl bg-white hover:bg-sable border border-sable flex items-center justify-center text-foret cursor-pointer shadow-xs active:scale-95"
-                      aria-label="Augmenter heures sup"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Grand affichage ergonomique */}
-                <div className="flex items-center justify-between bg-white rounded-xl p-3 border border-sable shadow-2xs">
-                  <span className="text-xs font-bold text-sauge">Part heures sup</span>
-                  <span className="text-xl font-black text-terracotta tracking-tight">
-                    {heuresSup === 0 ? '0h (Aucune)' : `+${formatHours(heuresSup)}`}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-[10px] text-sauge">
-                  <span>
-                    Heures supplémentaires déjà incluses dans les {formatHours(heuresTotales)} totales (auto au-delà de {formatHours(dailyTarget)}).
-                  </span>
-                  {isSupManuallyEdited ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const autoSup = calculateAutoOvertime(heuresTotales, dailyTarget);
-                        setHeuresSup(autoSup);
-                        setIsSupManuallyEdited(false);
-                        runValidation(heuresTotales, tempsPause, autoSup);
-                      }}
-                      className="text-terracotta hover:underline font-semibold cursor-pointer flex items-center gap-1 shrink-0 ml-1"
-                      title="Rétablir la pré-sélection basée sur l'objectif"
-                    >
-                      <RotateCcw className="w-2.5 h-2.5" />
-                      <span>Réaligner ({formatHours(calculateAutoOvertime(heuresTotales, dailyTarget))})</span>
-                    </button>
-                  ) : (
-                    <span className="text-emerald-700 font-semibold shrink-0 ml-1">(Pré-sélection auto)</span>
+                  {heuresTotales > 0 && (
+                    <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-foret text-white shadow-2xs">
+                      {formatHours(heuresTotales)}
+                    </span>
                   )}
                 </div>
 
-                {/* Boutons rapides pour heures sup */}
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {[0, 0.5, 1, 1.5, 2].map((val) => (
-                    <button
-                      key={val}
-                      type="button"
-                      onClick={() => handleSupChange(val)}
-                      className={`min-h-[48px] px-3 font-bold rounded-xl border transition-colors cursor-pointer text-xs ${heuresSup === val
-                        ? 'bg-foret text-white border-foret shadow-xs'
-                        : 'bg-white text-foret/80 border-sable hover:bg-sable/50'
-                        }`}
-                    >
-                      {val === 0 ? '0h (Aucune)' : `+${formatHours(val)}`}
-                    </button>
-                  ))}
+                <div className="flex items-baseline justify-between pt-1">
+                  <div>
+                    <span className="text-3xl font-black text-foret tracking-tight">
+                      {heuresTotales > 0 ? formatHours(heuresTotales) : '--:--'}
+                    </span>
+                    <p className="text-[11px] text-foret/70 font-medium mt-0.5">
+                      Durée nette calculée (pause déduite)
+                    </p>
+                  </div>
+
+                  {/* Badges de répartition normale / sup */}
+                  <div className="text-right space-y-1">
+                    <div className="inline-flex items-center gap-1.5 bg-white/90 px-2.5 py-1 rounded-xl border border-foret/15 text-xs shadow-2xs">
+                      <span className="text-xs font-bold text-emerald-800">
+                        {formatHours(calculateNormalHours(heuresTotales, heuresSup))}
+                      </span>
+                      <span className="text-[10px] text-sauge font-semibold">normales</span>
+                    </div>
+                    <div>
+                      <span className={`inline-block text-[11px] font-extrabold px-2 py-0.5 rounded-lg border ${heuresSup > 0
+                          ? 'bg-terracotta/15 text-terracotta border-terracotta/30'
+                          : 'bg-white/60 text-foret/50 border-sable/60'
+                        }`}>
+                        {heuresSup > 0 ? `+${formatHours(heuresSup)} sup` : '0h sup'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Badge de synthèse en direct */}
-              <div className="p-3 bg-craie rounded-xl border border-sable/70 text-xs text-foret font-medium text-center">
-                <span className="font-extrabold">{formatHours(heuresTotales)}</span> au total ={' '}
-                <span className="font-bold text-emerald-800">
-                  {formatHours(calculateNormalHours(heuresTotales, heuresSup))}
-                </span>{' '}
-                normales +{' '}
-                <span className="font-bold text-terracotta bg-terracotta/10 px-1.5 py-0.5 rounded-md">{formatHours(heuresSup)}</span> sup
-                {tempsPause > 0 && ` • Pause : ${formatHours(tempsPause)}`}
+              {/* Accordéon / Zone Secondaire pour les détails & ajustement des heures sup */}
+              <div className="border border-sable/80 rounded-2xl overflow-hidden bg-craie">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvancedDetails((prev) => !prev)}
+                  className="w-full py-3 px-3.5 bg-craie hover:bg-sable/30 flex items-center justify-between text-xs font-bold text-foret transition-colors cursor-pointer min-h-[48px]"
+                  aria-expanded={showAdvancedDetails}
+                >
+                  <span className="flex items-center gap-2">
+                    <SlidersHorizontal className="w-4 h-4 text-foret/70" />
+                    <span>Ajuster les heures sup & détails</span>
+                    {isSupManuallyEdited && (
+                      <span className="bg-terracotta/15 text-terracotta text-[10px] px-2 py-0.5 rounded-full font-bold">
+                        {formatHours(heuresSup)} manuelles
+                      </span>
+                    )}
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-foret/60 transition-transform duration-200 ${showAdvancedDetails ? 'rotate-180' : ''
+                      }`}
+                  />
+                </button>
+
+                {showAdvancedDetails && (
+                  <div className="p-3.5 pt-0 space-y-3.5 border-t border-sable/60 animate-in fade-in duration-150">
+                    {/* Détails de ventilation : amplitude brute et pause déduite */}
+                    <div className="grid grid-cols-2 gap-2 pt-2">
+                      <div className="bg-white rounded-xl p-2.5 border border-sable shadow-2xs">
+                        <span className="text-[10px] font-bold text-sauge block">Amplitude totale</span>
+                        <span className="text-base font-extrabold text-foret">
+                          {heureDebut && heureFin ? formatHours(calculatedAmplitude) : '--:--'}
+                        </span>
+                      </div>
+                      <div className="bg-white rounded-xl p-2.5 border border-sable shadow-2xs">
+                        <span className="text-[10px] font-bold text-sauge block">Pause déduite</span>
+                        <span className="text-base font-extrabold text-foret">
+                          {tempsPause > 0 ? `-${formatHours(tempsPause)}` : '0h00'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Débrayage manuel des heures supplémentaires */}
+                    <div className="space-y-2 bg-white p-3 rounded-xl border border-sable">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-foret">
+                          Dont heures supplémentaires (incluses) :
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleSupChange(heuresSup - 0.25)}
+                            className="min-w-[48px] min-h-[48px] w-12 h-12 rounded-xl bg-craie hover:bg-sable border border-sable flex items-center justify-center text-foret cursor-pointer shadow-xs active:scale-95"
+                            aria-label="Diminuer heures sup"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSupChange(heuresSup + 0.25)}
+                            className="min-w-[48px] min-h-[48px] w-12 h-12 rounded-xl bg-craie hover:bg-sable border border-sable flex items-center justify-center text-foret cursor-pointer shadow-xs active:scale-95"
+                            aria-label="Augmenter heures sup"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Grand affichage ergonomique */}
+                      <div className="flex items-center justify-between bg-craie rounded-xl p-2.5 border border-sable/70">
+                        <span className="text-xs font-bold text-sauge">Montant retenu</span>
+                        <span className="text-lg font-black text-terracotta tracking-tight">
+                          {heuresSup === 0 ? '0h (Aucune)' : `+${formatHours(heuresSup)}`}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[10px] text-sauge">
+                        <span>
+                          Heures supplémentaires déjà incluses dans les {formatHours(heuresTotales)} totales (auto au-delà de {formatHours(dailyTarget)}).
+                        </span>
+                        {isSupManuallyEdited ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const autoSup = calculateAutoOvertime(heuresTotales, dailyTarget);
+                              setHeuresSup(autoSup);
+                              setIsSupManuallyEdited(false);
+                              runValidation(heureDebut, heureFin, tempsPause, autoSup);
+                            }}
+                            className="text-terracotta hover:underline font-semibold cursor-pointer flex items-center gap-1 shrink-0 ml-1"
+                            title="Rétablir la pré-sélection basée sur l'objectif"
+                          >
+                            <RotateCcw className="w-2.5 h-2.5" />
+                            <span>Réaligner ({formatHours(calculateAutoOvertime(heuresTotales, dailyTarget))})</span>
+                          </button>
+                        ) : (
+                          <span className="text-emerald-700 font-semibold shrink-0 ml-1">(Calcul auto)</span>
+                        )}
+                      </div>
+
+                      {/* Boutons rapides pour heures sup */}
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {[0, 0.5, 1, 1.5, 2].map((val) => (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => handleSupChange(val)}
+                            className={`min-h-[48px] px-3 font-bold rounded-xl border transition-colors cursor-pointer text-xs ${heuresSup === val
+                                ? 'bg-foret text-white border-foret shadow-xs'
+                                : 'bg-craie text-foret/80 border-sable hover:bg-sable/50'
+                              }`}
+                          >
+                            {val === 0 ? '0h (Aucune)' : `+${formatHours(val)}`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Bouton de validation */}
               <button
                 type="submit"
-                disabled={isSubmitting || Boolean(validationError)}
+                disabled={isSubmitting || Boolean(validationError) || !heureDebut || !heureFin || heuresTotales <= 0}
                 className="w-full min-h-[48px] h-14 bg-foret hover:bg-foret/90 text-white font-bold text-base rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-foret/20 transition-all active:scale-98 cursor-pointer disabled:opacity-50"
               >
                 <Save className="w-5 h-5" />

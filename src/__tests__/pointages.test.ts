@@ -374,5 +374,22 @@ describe('Declarative Pointages - Unit & Integration Tests', () => {
       assert.match(sql, /CONSTRAINT pointages_profile_date_unique UNIQUE \(profile_id, date\)/);
       assert.match(sql, /CREATE POLICY "pointages_update_policy"/);
     });
+
+    it('verifies SQL migration for time ranges (heure_debut, heure_fin) exists', () => {
+      const migrationPath = resolve(
+        projectRoot,
+        'supabase/migrations/20261111_add_time_ranges_to_pointages.sql'
+      );
+      assert.ok(existsSync(migrationPath), 'SQL migration 20261111 must exist');
+      const sql = readFileSync(migrationPath, 'utf-8');
+      assert.match(sql, /ADD COLUMN IF NOT EXISTS heure_debut TIME NULL/);
+      assert.match(sql, /ADD COLUMN IF NOT EXISTS heure_fin TIME NULL/);
+    });
+
+    it('verifies database.ts defines optional heure_debut and heure_fin on Pointage models', () => {
+      const typesContent = readFileSync(resolve(projectRoot, 'src/types/database.ts'), 'utf-8');
+      assert.match(typesContent, /heure_debut\?: string \| null/);
+      assert.match(typesContent, /heure_fin\?: string \| null/);
+    });
   });
 });

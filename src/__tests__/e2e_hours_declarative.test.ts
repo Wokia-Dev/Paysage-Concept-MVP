@@ -14,8 +14,16 @@ import {
   calculateAutoOvertime,
   calculateNormalHours,
   DEFAULT_DAILY_TARGET,
+  DEFAULT_PAUSE,
   getStoredDailyTarget,
   setStoredDailyTarget,
+  normalizeTimeString,
+  parseTimeToDecimal,
+  decimalToTimeString,
+  calculateAmplitude,
+  calculateDurationFromRange,
+  validateTimeRange,
+  adjustTimeString,
 } from '../lib/hours.ts';
 import type { PointageLocal, Profile } from '../types/database.ts';
 
@@ -303,6 +311,94 @@ describe('E2E Declarative Hours Tracking (R4 & R3)', () => {
       assert.ok(unsubmittedWorker);
       assert.equal(unsubmittedWorker?.hasSubmitted, false);
       assert.equal(unsubmittedWorker?.heuresTotales, 0);
+    });
+  });
+
+  describe('Tier 5: Time-Range Declarative Engine (Arrival, Departure & Pause)', () => {
+    it('normalizes time strings and trims seconds from Postgres TIME fields', () => {
+      assert.equal(normalizeTimeString('08:00'), '08:00');
+      assert.equal(normalizeTimeString('8:00'), '08:00');
+      assert.equal(normalizeTimeString('08:00:00'), '08:00');
+      assert.equal(normalizeTimeString(' 16:30:00 '), '16:30');
+      assert.equal(normalizeTimeString(''), '');
+      assert.equal(normalizeTimeString(null), '');
+      assert.equal(normalizeTimeString('invalid'), '');
+    });
+
+    it('parses time strings to decimal hours accurately', () => {
+      assert.equal(parseTimeToDecimal('08:00'), 8.0);
+      assert.equal(parseTimeToDecimal('08:30'), 8.5);
+      assert.equal(parseTimeToDecimal('07:15'), 7.25);
+      assert.equal(parseTimeToDecimal('16:45'), 16.75);
+      assert.equal(parseTimeToDecimal(''), 0);
+    });
+
+    it('formats decimal hours to standard HH:mm format', () => {
+      assert.equal(decimalToTimeString(8.0), '08:00');
+      assert.equal(decimalToTimeString(8.5), '08:30');
+      assert.equal(decimalToTimeString(7.25), '07:15');
+      assert.equal(decimalToTimeString(16.75), '16:45');
+      assert.equal(decimalToTimeString(0), '00:00');
+    });
+
+    it('calculates amplitude between arrival and departure times', () => {
+      // 08:00 to 17:00 -> 9 hours
+      assert.equal(calculateAmplitude('08:00', '17:00'), 9.0);
+      // 07:30 to 16:30 -> 9 hours
+      assert.equal(calculateAmplitude('07:30', '16:30'), 9.0);
+      // Departure before arrival -> 0 (invalid)
+      assert.equal(calculateAmplitude('17:00', '08:00'), 0);
+      // Equal arrival and departure -> 0
+      assert.equal(calculateAmplitude('08:00', '08:00'), 0);
+    });
+
+    it('calculates net worked duration after deducting pause', () => {
+      // 08:00 to 16:30 (8.5h amplitude) - 0.5h (30 min) pause -> 8.0h net
+      assert.equal(calculateDurationFromRange('08:00', '16:30', 0.5), 8.0);
+      // 07:30 to 17:00 (9.5h amplitude) - 0.75h (45 min) pause -> 8.75h net
+      assert.equal(calculateDurationFromRange('07:30', '17:00', 0.75), 8.75);
+      // Zero pause
+      assert.equal(calculateDurationFromRange('08:00', '16:00', 0), 8.0);
+      // Pause greater than amplitude -> clamped to 0
+      assert.equal(calculateDurationFromRange('08:00', '09:00', 1.5), 0);
+    });
+
+    it('validates time range business rules rigorously', () => {
+      // Valid cases
+      assert.equal(validateTimeRange('08:00', '16:30', 0.5).valid, true);
+      assert.equal(validateTimeRange('07:00', '17:00', 1.0).valid, true);
+
+      // Missing values
+      assert.equal(validateTimeRange('', '17:00', 0.5).valid, false);
+      assert.equal(validateTimeRange('08:00', '', 0.5).valid, false);
+
+      // Departure before or equal to arrival
+      const invalidDeparture = validateTimeRange('17:00', '08:00', 0.5);
+      assert.equal(invalidDeparture.valid, false);
+      assert.match(invalidDeparture.error || '', /postérieure à l'heure d'arrivée/);
+
+      const equalTimes = validateTimeRange('08:00', '08:00', 0.5);
+      assert.equal(equalTimes.valid, false);
+
+      // Negative pause
+      assert.equal(validateTimeRange('08:00', '17:00', -0.5).valid, false);
+
+      // Pause exceeds amplitude
+      const excessivePause = validateTimeRange('08:00', '09:00', 1.5);
+      assert.equal(excessivePause.valid, false);
+      assert.match(excessivePause.error || '', /inférieur à l'amplitude/);
+    });
+
+    it('adjusts time string by minute increments (+/- 15 min)', () => {
+      assert.equal(adjustTimeString('08:00', 15), '08:15');
+      assert.equal(adjustTimeString('08:00', -15), '07:45');
+      assert.equal(adjustTimeString('08:45', 30), '09:15');
+      // Clamped at 00:00
+      assert.equal(adjustTimeString('00:05', -15), '00:00');
+    });
+
+    it('verifies default pause constant is 30 minutes (0.5 hours)', () => {
+      assert.equal(DEFAULT_PAUSE, 0.5);
     });
   });
 });

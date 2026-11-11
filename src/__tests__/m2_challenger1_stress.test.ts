@@ -339,13 +339,13 @@ describe('Milestone 2 Adversarial Stress Suite (Challenger 1)', () => {
   // Challenge 4: Touch Target Ergonomics Audit (>= 48x48px)
   // =========================================================================
   describe('Challenge 4: Touch Target Ergonomics Audit (>= 48x48px)', () => {
-    it('verifies all 6 form steppers (-, +) declare exact 48x48px touch boundaries', () => {
+    it('verifies all 8 form steppers (-, +) declare exact 48x48px touch boundaries', () => {
       const stepperMatches = homeContent.match(/min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12/g);
       assert.ok(stepperMatches, 'Stepper buttons must be found');
       assert.equal(
         stepperMatches.length,
-        6,
-        `Expected 6 steppers with min-w-[48px] min-h-[48px] w-12 h-12, found ${stepperMatches.length}`
+        8,
+        `Expected 8 steppers (arrivée, départ, pause, sup) with min-w-[48px] min-h-[48px] w-12 h-12, found ${stepperMatches.length}`
       );
     });
 

@@ -843,15 +843,15 @@ describe('Tier 5 Adversarial Coverage Hardening (Challenger 1)', () => {
         'Chantiers modal and action buttons must enforce min-w-[48px] min-h-[48px]'
       );
 
-      // Home.tsx steppers
+      // Home.tsx steppers (saisie par plages horaires)
       assert.match(
         homeContent,
-        /min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12[\s\S]*?Diminuer heures totales/,
+        /min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12[\s\S]*?Diminuer heure d'arrivée/,
         'Home minus stepper must enforce >= 48x48px'
       );
       assert.match(
         homeContent,
-        /min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12[\s\S]*?Augmenter heures totales/,
+        /min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12[\s\S]*?Augmenter heure d'arrivée/,
         'Home plus stepper must enforce >= 48x48px'
       );
     });

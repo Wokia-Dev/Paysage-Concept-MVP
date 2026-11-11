@@ -1,6 +1,7 @@
 import { db, ensureSeedData } from './db';
 import { supabase } from './supabase';
 import type { PointageLocal } from '../types/database';
+import { normalizeTimeString } from './hours';
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
 
@@ -16,6 +17,8 @@ export interface SaveDailyPointageInput {
   profile_id: string;
   chantier_id?: string | null;
   date: string; // Format YYYY-MM-DD
+  heure_debut?: string | null;
+  heure_fin?: string | null;
   heures_totales: number;
   temps_pause: number;
   heures_sup: number;
@@ -39,14 +42,14 @@ class SyncEngine {
   constructor() {
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => {
-        this.triggerSync().catch(() => {});
-        this.pullRemoteData().catch(() => {});
+        this.triggerSync().catch(() => { });
+        this.pullRemoteData().catch(() => { });
       });
       // Initialise le seed si nécessaire et récupère les données fraîches de Supabase
       ensureSeedData()
         .then(() => {
           if (navigator.onLine) {
-            this.pullRemoteData().catch(() => {});
+            this.pullRemoteData().catch(() => { });
           }
         })
         .catch(console.error);
@@ -77,12 +80,16 @@ class SyncEngine {
 
     const now = new Date().toISOString();
     const pointageId = existing ? existing.id : generateUUID();
+    const heureDebut = data.heure_debut ? normalizeTimeString(data.heure_debut) : null;
+    const heureFin = data.heure_fin ? normalizeTimeString(data.heure_fin) : null;
 
     const pointage: PointageLocal = {
       id: pointageId,
       profile_id: data.profile_id,
       chantier_id: data.chantier_id ?? null,
       date: data.date,
+      heure_debut: heureDebut,
+      heure_fin: heureFin,
       heures_totales: Number(data.heures_totales) || 0,
       temps_pause: Number(data.temps_pause) || 0,
       heures_sup: Number(data.heures_sup) || 0,
@@ -98,7 +105,7 @@ class SyncEngine {
 
     // Déclenchement automatique de la synchronisation si en ligne
     if (typeof navigator !== 'undefined' && navigator.onLine) {
-      this.triggerSync().catch(() => {});
+      this.triggerSync().catch(() => { });
     }
 
     return pointage;
@@ -149,11 +156,13 @@ class SyncEngine {
 
       for (const pt of pending) {
         try {
-          const payload = {
+          const payload: Record<string, unknown> = {
             id: pt.id,
             profile_id: session.user.id,
             chantier_id: pt.chantier_id || null,
             date: pt.date,
+            heure_debut: pt.heure_debut ? normalizeTimeString(pt.heure_debut) : null,
+            heure_fin: pt.heure_fin ? normalizeTimeString(pt.heure_fin) : null,
             heures_totales: Number(pt.heures_totales) || 0,
             temps_pause: Number(pt.temps_pause) || 0,
             heures_sup: Number(pt.heures_sup) || 0,
@@ -162,11 +171,24 @@ class SyncEngine {
           };
 
           // UPSERT ciblant la contrainte d'unicité (profile_id, date)
-          const { data, error } = await supabase
+          let { data, error } = await supabase
             .from('pointages')
             .upsert(payload, { onConflict: 'profile_id,date' })
             .select('id, synchronise_le, updated_at')
             .single();
+
+          // Fallback gracieux si Supabase n'a pas encore exécuté la migration pour heure_debut/heure_fin
+          if (error && (error.message.includes('heure_debut') || error.message.includes('heure_fin'))) {
+            delete payload.heure_debut;
+            delete payload.heure_fin;
+            const retry = await supabase
+              .from('pointages')
+              .upsert(payload, { onConflict: 'profile_id,date' })
+              .select('id, synchronise_le, updated_at')
+              .single();
+            data = retry.data;
+            error = retry.error;
+          }
 
           if (!error) {
             const finalId = data?.id || pt.id;
@@ -279,6 +301,8 @@ class SyncEngine {
                 profile_id: rp.profile_id,
                 chantier_id: rp.chantier_id,
                 date: rp.date,
+                heure_debut: rp.heure_debut ? normalizeTimeString(rp.heure_debut) : null,
+                heure_fin: rp.heure_fin ? normalizeTimeString(rp.heure_fin) : null,
                 heures_totales: Number(rp.heures_totales) || 0,
                 temps_pause: Number(rp.temps_pause) || 0,
                 heures_sup: Number(rp.heures_sup) || 0,
@@ -296,6 +320,8 @@ class SyncEngine {
               profile_id: rp.profile_id,
               chantier_id: rp.chantier_id,
               date: rp.date,
+              heure_debut: rp.heure_debut ? normalizeTimeString(rp.heure_debut) : null,
+              heure_fin: rp.heure_fin ? normalizeTimeString(rp.heure_fin) : null,
               heures_totales: Number(rp.heures_totales) || 0,
               temps_pause: Number(rp.temps_pause) || 0,
               heures_sup: Number(rp.heures_sup) || 0,

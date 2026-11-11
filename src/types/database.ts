@@ -43,6 +43,8 @@ export interface Pointage {
   profile_id: string;
   chantier_id?: string | null;
   date: string; // Format YYYY-MM-DD
+  heure_debut?: string | null; // Format HH:mm ou HH:mm:ss
+  heure_fin?: string | null;   // Format HH:mm ou HH:mm:ss
   heures_totales: number;
   temps_pause: number;
   heures_sup: number;
@@ -56,6 +58,8 @@ export interface PointageLocal {
   profile_id: string;
   chantier_id?: string | null;
   date: string; // Format YYYY-MM-DD
+  heure_debut?: string | null; // Format HH:mm ou HH:mm:ss
+  heure_fin?: string | null;   // Format HH:mm ou HH:mm:ss
   heures_totales: number;
   temps_pause: number;
   heures_sup: number;

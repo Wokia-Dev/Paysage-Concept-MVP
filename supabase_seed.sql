@@ -319,3 +319,96 @@ BEGIN
     CREATE POLICY "Authenticated users can view pointages" ON public.pointages FOR SELECT TO authenticated USING (true);
   END IF;
 END $$;
+
+-- ------------------------------------------------------------------------------
+-- 7. ÉVOLUTION DU SCHÉMA & POINTAGES D'EXEMPLE POUR LE DÉVELOPPEMENT
+-- ------------------------------------------------------------------------------
+ALTER TABLE public.pointages
+  ADD COLUMN IF NOT EXISTS heure_debut TIME NULL,
+  ADD COLUMN IF NOT EXISTS heure_fin TIME NULL;
+
+-- Insertion de pointages représentatifs pour l'équipe (Hier et Aujourd'hui)
+INSERT INTO public.pointages (
+  profile_id, chantier_id, date, heure_debut, heure_fin,
+  heures_totales, temps_pause, heures_sup, synchronise_le
+) VALUES
+  -- Hier : Jean (8h normales + 1h sup)
+  (
+    '4fa02732-58a2-4de7-872f-1db234899c1e',
+    'c1000000-0000-4000-8000-000000000001',
+    CURRENT_DATE - INTERVAL '1 day',
+    '08:00:00',
+    '16:30:00',
+    8.00,
+    0.50,
+    1.00,
+    now()
+  ),
+  -- Hier : Marc (Chef)
+  (
+    'd587499d-3f96-4164-b37f-01b7a442646b',
+    'c2000000-0000-4000-8000-000000000002',
+    CURRENT_DATE - INTERVAL '1 day',
+    '07:30:00',
+    '17:00:00',
+    9.00,
+    0.50,
+    2.00,
+    now()
+  ),
+  -- Hier : Thomas
+  (
+    'b3000000-0000-4000-8000-000000000003',
+    'c1000000-0000-4000-8000-000000000001',
+    CURRENT_DATE - INTERVAL '1 day',
+    '08:00:00',
+    '15:30:00',
+    7.00,
+    0.50,
+    0.00,
+    now()
+  ),
+  -- Hier : Lucas
+  (
+    'b4000000-0000-4000-8000-000000000004',
+    'c2000000-0000-4000-8000-000000000002',
+    CURRENT_DATE - INTERVAL '1 day',
+    '08:00:00',
+    '16:30:00',
+    8.00,
+    0.50,
+    1.00,
+    now()
+  ),
+  -- Aujourd'hui : Thomas a déjà déclaré
+  (
+    'b3000000-0000-4000-8000-000000000003',
+    'c1000000-0000-4000-8000-000000000001',
+    CURRENT_DATE,
+    '08:00:00',
+    '15:30:00',
+    7.00,
+    0.50,
+    0.00,
+    now()
+  ),
+  -- Aujourd'hui : Lucas a déjà déclaré
+  (
+    'b4000000-0000-4000-8000-000000000004',
+    'c2000000-0000-4000-8000-000000000002',
+    CURRENT_DATE,
+    '07:30:00',
+    '16:30:00',
+    8.50,
+    0.50,
+    1.50,
+    now()
+  )
+ON CONFLICT (profile_id, date) DO UPDATE SET
+  chantier_id = EXCLUDED.chantier_id,
+  heure_debut = EXCLUDED.heure_debut,
+  heure_fin = EXCLUDED.heure_fin,
+  heures_totales = EXCLUDED.heures_totales,
+  temps_pause = EXCLUDED.temps_pause,
+  heures_sup = EXCLUDED.heures_sup,
+  synchronise_le = EXCLUDED.synchronise_le;
