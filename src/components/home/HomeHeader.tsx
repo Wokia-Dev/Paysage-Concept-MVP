@@ -24,7 +24,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
 
   return (
     <section
-      className="-mx-4 -mt-4 text-white px-5 pt-[calc(env(safe-area-inset-top,0px)+1.75rem)] pb-8 rounded-b-3xl shadow-soft space-y-5 relative overflow-hidden bg-foret"
+      className="-mx-4 -mt-4 text-white px-5 pt-[calc(env(safe-area-inset-top,0px)+1.75rem)] pb-8 rounded-b-3xl shadow-soft dark:shadow-[0_6px_24px_rgba(0,0,0,0.45)] space-y-5 relative overflow-hidden bg-foret"
       style={{
         backgroundColor: '#15302F',
         backgroundImage: `

@@ -2,6 +2,7 @@ import React from 'react';
 import { Pencil } from 'lucide-react';
 import type { PointageLocal } from '../../types/database';
 import { calculateNormalHours, formatHours } from '../../lib/hours';
+import { useTheme } from '../../context/useTheme';
 import type {
   ActiveDayInspection,
   AnalyticsDayItem,
@@ -41,25 +42,35 @@ export const HoursBarChartSVG: React.FC<HoursBarChartSVGProps> = ({
   onSelectDate,
   onOpenSaisie,
 }) => {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
   // Position Y de la ligne d'objectif journalier
   const targetY = PADDING_TOP + USABLE_HEIGHT - (dailyTarget / maxHourValue) * USABLE_HEIGHT;
 
+  const axisLineColor = isDark ? '#304744' : '#E8E3D9';
+  const targetLineColor = isDark ? '#9BB89B' : '#8FA98F';
+  const trackSelectedColor = isDark ? '#2B423F' : '#E8E3D9';
+  const trackIdleColor = isDark ? '#172322' : '#F5F2EB';
+  const normalBarColor = isDark ? '#3B8B80' : '#15302F';
+  const overtimeBarColor = isDark ? '#E38D69' : '#C47452';
+
   return (
-    <div className="bg-craie rounded-2xl p-4 border border-sable/80 shadow-2xs space-y-3">
+    <div className="bg-craie dark:bg-[#1E2E2C] rounded-2xl p-4 border border-sable/80 dark:border-[#304744] shadow-2xs space-y-3">
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-3">
-          <span className="font-bold text-foret flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-foret inline-block" />
+          <span className="font-bold text-foret dark:text-[#EDF2F0] flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-sm bg-foret dark:bg-[#3B8B80] inline-block" />
             Normales
           </span>
-          <span className="font-bold text-terracotta flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-terracotta inline-block" />
+          <span className="font-bold text-terracotta dark:text-[#E38D69] flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-sm bg-terracotta dark:bg-[#E38D69] inline-block" />
             Heures sup
           </span>
         </div>
 
-        <div className="flex items-center gap-1 text-[11px] text-sauge font-medium">
-          <span className="w-3 border-t-2 border-dashed border-sauge inline-block" />
+        <div className="flex items-center gap-1 text-[11px] text-sauge dark:text-[#9BB89B] font-medium">
+          <span className="w-3 border-t-2 border-dashed border-sauge dark:border-[#9BB89B] inline-block" />
           <span>Obj. {formatHours(dailyTarget)}</span>
         </div>
       </div>
@@ -77,7 +88,7 @@ export const HoursBarChartSVG: React.FC<HoursBarChartSVGProps> = ({
             y1={PADDING_TOP + USABLE_HEIGHT}
             x2={CHART_WIDTH}
             y2={PADDING_TOP + USABLE_HEIGHT}
-            stroke="#E8E3D9"
+            stroke={axisLineColor}
             strokeWidth="1"
           />
 
@@ -87,7 +98,7 @@ export const HoursBarChartSVG: React.FC<HoursBarChartSVGProps> = ({
             y1={targetY}
             x2={CHART_WIDTH}
             y2={targetY}
-            stroke="#8FA98F"
+            stroke={targetLineColor}
             strokeWidth="1.5"
             strokeDasharray="4 3"
           />
@@ -124,8 +135,8 @@ export const HoursBarChartSVG: React.FC<HoursBarChartSVGProps> = ({
                   width={colWidth}
                   height={USABLE_HEIGHT}
                   rx={isWeek ? 4 : 2}
-                  fill={isSelected ? '#E8E3D9' : '#F5F2EB'}
-                  className="transition-colors hover:fill-sable/80"
+                  fill={isSelected ? trackSelectedColor : trackIdleColor}
+                  className="transition-colors hover:fill-sable/80 dark:hover:fill-[#263A37]"
                 />
 
                 {/* Segment Normal (Vert Forêt) */}
@@ -136,7 +147,7 @@ export const HoursBarChartSVG: React.FC<HoursBarChartSVGProps> = ({
                     width={colWidth}
                     height={normHeight}
                     rx={supHeight > 0 ? 0 : isWeek ? 4 : 2}
-                    fill="#15302F"
+                    fill={normalBarColor}
                   />
                 )}
 
@@ -148,7 +159,7 @@ export const HoursBarChartSVG: React.FC<HoursBarChartSVGProps> = ({
                     width={colWidth}
                     height={supHeight}
                     rx={isWeek ? 4 : 2}
-                    fill="#C47452"
+                    fill={overtimeBarColor}
                   />
                 )}
 
@@ -159,7 +170,9 @@ export const HoursBarChartSVG: React.FC<HoursBarChartSVGProps> = ({
                     y={CHART_HEIGHT - 8}
                     textAnchor="middle"
                     className={`text-[10px] font-bold ${
-                      isSelected ? 'fill-foret font-black' : 'fill-foret/70'
+                      isSelected
+                        ? 'fill-foret dark:fill-[#EDF2F0] font-black'
+                        : 'fill-foret/70 dark:fill-[#9BB89B]'
                     }`}
                   >
                     {day.dayName.slice(0, 1)} {day.dayNumber}
@@ -170,7 +183,7 @@ export const HoursBarChartSVG: React.FC<HoursBarChartSVGProps> = ({
                       x={xPos + colWidth / 2}
                       y={CHART_HEIGHT - 8}
                       textAnchor="middle"
-                      className="text-[9px] font-bold fill-foret/60"
+                      className="text-[9px] font-bold fill-foret/60 dark:fill-[#9BB89B]"
                     >
                       {day.dayNumber}
                     </text>
@@ -179,7 +192,7 @@ export const HoursBarChartSVG: React.FC<HoursBarChartSVGProps> = ({
 
                 {/* Indicateur Aujourd'hui */}
                 {day.isToday && (
-                  <circle cx={xPos + colWidth / 2} cy={CHART_HEIGHT - 2} r="2" fill="#C47452" />
+                  <circle cx={xPos + colWidth / 2} cy={CHART_HEIGHT - 2} r="2" fill={overtimeBarColor} />
                 )}
               </g>
             );
@@ -188,35 +201,35 @@ export const HoursBarChartSVG: React.FC<HoursBarChartSVGProps> = ({
       </div>
 
       {/* Fiche d'inspection du jour sélectionné sur le graphique */}
-      <div className="bg-white rounded-2xl p-3.5 border border-sable flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-2xs">
+      <div className="bg-white dark:bg-[#172322] rounded-2xl p-3.5 border border-sable dark:border-[#304744] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-2xs">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-foret">{activeDayData.formattedDate}</span>
+            <span className="text-xs font-bold text-foret dark:text-[#EDF2F0]">{activeDayData.formattedDate}</span>
             {activeDayData.dateStr === todayStr && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sable/50 text-foret">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sable/50 text-foret dark:bg-[#263A37] dark:text-[#D5E6DC]">
                 Aujourd'hui
               </span>
             )}
           </div>
 
-          <p className="text-[11px] text-sauge font-medium mt-0.5">{activeDayData.chantierName}</p>
+          <p className="text-[11px] text-sauge dark:text-[#9BB89B] font-medium mt-0.5">{activeDayData.chantierName}</p>
 
           <div className="flex items-center gap-2 mt-1.5 text-xs">
             {activeDayData.hasSubmitted ? (
               <>
-                <span className="font-extrabold text-foret">{formatHours(activeDayData.tot)}</span>
-                <span className="text-foret/60 font-medium">
+                <span className="font-extrabold text-foret dark:text-[#EDF2F0]">{formatHours(activeDayData.tot)}</span>
+                <span className="text-foret/60 dark:text-[#B8C7C2] font-medium">
                   ({formatHours(activeDayData.norm)} normales
                   {activeDayData.sup > 0 && ` + ${formatHours(activeDayData.sup)} sup`})
                 </span>
                 {activeDayData.pause > 0 && (
-                  <span className="text-sauge font-medium">
+                  <span className="text-sauge dark:text-[#9BB89B] font-medium">
                     • Pause : {formatHours(activeDayData.pause)}
                   </span>
                 )}
               </>
             ) : (
-              <span className="text-foret/50 italic font-medium">
+              <span className="text-foret/50 dark:text-[#8FA5A0] italic font-medium">
                 Aucune heure déclarée pour ce jour (0h00)
               </span>
             )}
@@ -230,9 +243,9 @@ export const HoursBarChartSVG: React.FC<HoursBarChartSVGProps> = ({
               onSelectDate(activeDayData.dateStr);
               onOpenSaisie(activeDayData.dateStr);
             }}
-            className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-foret hover:bg-foret/90 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-transform active:scale-95 cursor-pointer"
+            className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-foret hover:bg-foret/90 dark:bg-[#235852] dark:hover:bg-[#2B6962] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-transform active:scale-95 cursor-pointer"
           >
-            <Pencil className="w-3 h-3 text-sable" />
+            <Pencil className="w-3 h-3 text-sable dark:text-[#D5E6DC]" />
             <span>{activeDayData.hasSubmitted ? 'Modifier' : 'Saisir'}</span>
           </button>
         </div>

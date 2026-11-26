@@ -9,6 +9,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#15302F" />
     <meta name="color-scheme" content="light dark" />
+    <script>
+      (function () {
+        try {
+          var key = 'paysage_theme_preference';
+          var stored = window.localStorage.getItem(key);
+          var pref = stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+          var prefersDark =
+            typeof window.matchMedia === 'function' &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var resolved = pref === 'dark' || (pref === 'system' && prefersDark) ? 'dark' : 'light';
+          var root = document.documentElement;
+          var isDark = resolved === 'dark';
+          root.classList.toggle('dark', isDark);
+          root.classList.toggle('light', !isDark);
+          root.style.colorScheme = resolved;
+          root.style.backgroundColor = isDark ? '#0F1D1C' : '#15302F';
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) {
+            meta.setAttribute('content', isDark ? '#0F1D1C' : '#15302F');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

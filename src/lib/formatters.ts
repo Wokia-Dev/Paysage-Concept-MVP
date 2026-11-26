@@ -75,17 +75,20 @@ export function getStatusBadge(statut?: ChantierStatut | string): {
     case 'en_cours':
       return {
         label: 'En cours',
-        className: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        className:
+          'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-700/60',
       };
     case 'termine':
       return {
         label: 'Terminé',
-        className: 'bg-slate-100 text-slate-800 border-slate-200',
+        className:
+          'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700',
       };
     default:
       return {
         label: 'En attente',
-        className: 'bg-amber-100 text-amber-800 border-amber-200',
+        className:
+          'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-700/60',
       };
   }
 }

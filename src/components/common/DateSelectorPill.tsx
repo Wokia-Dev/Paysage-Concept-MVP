@@ -41,7 +41,7 @@ export const DateSelectorPill: React.FC<DateSelectorPillProps> = ({
       className={`inline-flex items-center justify-between rounded-full shadow-xs transition-colors ${
         isHeader
           ? 'bg-white/10 hover:bg-white/15 border border-white/20 text-white'
-          : 'bg-white border border-sable/80 text-foret'
+          : 'bg-white border border-sable/80 text-foret dark:bg-[#172322] dark:border-[#2A3F3C] dark:text-[#EDF2F0]'
       } ${className}`}
     >
       {/* Previous Day Arrow (Min 48x48px Touch Target) */}
@@ -51,7 +51,7 @@ export const DateSelectorPill: React.FC<DateSelectorPillProps> = ({
         className={`min-w-[48px] min-h-[48px] flex items-center justify-center rounded-full transition-colors cursor-pointer ${
           isHeader
             ? 'text-sable/80 hover:text-white hover:bg-white/10'
-            : 'text-foret/70 hover:text-foret hover:bg-sable/30'
+            : 'text-foret/70 hover:text-foret hover:bg-sable/30 dark:text-[#B8C7C2] dark:hover:text-[#EDF2F0] dark:hover:bg-[#263A37]'
         }`}
         title="Jour précédent"
         aria-label="Jour précédent"
@@ -63,12 +63,12 @@ export const DateSelectorPill: React.FC<DateSelectorPillProps> = ({
       <div className="flex items-center gap-1.5 px-2 py-1 text-center select-none">
         <Calendar
           className={`w-3.5 h-3.5 shrink-0 ${
-            isHeader ? 'text-sauge' : 'text-foret'
+            isHeader ? 'text-sauge' : 'text-foret dark:text-[#9BB89B]'
           }`}
         />
         <span
           className={`text-xs md:text-sm font-bold tracking-tight ${
-            isHeader ? 'text-sable' : 'text-foret'
+            isHeader ? 'text-sable' : 'text-foret dark:text-[#EDF2F0]'
           }`}
         >
           {capitalized}
@@ -77,7 +77,7 @@ export const DateSelectorPill: React.FC<DateSelectorPillProps> = ({
           <button
             type="button"
             onClick={onToday}
-            className="ml-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-foret text-white hover:bg-foret/90 transition-colors cursor-pointer"
+            className="ml-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-foret text-white hover:bg-foret/90 dark:bg-[#235852] dark:hover:bg-[#2B6962] transition-colors cursor-pointer"
             title="Revenir à aujourd'hui"
           >
             Aujourd'hui
@@ -92,7 +92,7 @@ export const DateSelectorPill: React.FC<DateSelectorPillProps> = ({
         className={`min-w-[48px] min-h-[48px] flex items-center justify-center rounded-full transition-colors cursor-pointer ${
           isHeader
             ? 'text-sable/80 hover:text-white hover:bg-white/10'
-            : 'text-foret/70 hover:text-foret hover:bg-sable/30'
+            : 'text-foret/70 hover:text-foret hover:bg-sable/30 dark:text-[#B8C7C2] dark:hover:text-[#EDF2F0] dark:hover:bg-[#263A37]'
         }`}
         title="Jour suivant"
         aria-label="Jour suivant"

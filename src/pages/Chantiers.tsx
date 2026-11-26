@@ -47,17 +47,17 @@ export function Chantiers() {
       )}
 
       {/* 1. En-tête de la Gestion des Chantiers */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-sable/80 shadow-soft space-y-3.5">
+      <div className="bg-white dark:bg-[#172322] rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-sable/80 dark:border-[#2A3F3C] shadow-soft space-y-3.5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-foret text-sable flex items-center justify-center shrink-0">
-              <Briefcase className="w-5 h-5 text-terracotta" />
+            <div className="w-10 h-10 rounded-2xl bg-foret dark:bg-[#235852] text-sable dark:text-[#D5E6DC] flex items-center justify-center shrink-0">
+              <Briefcase className="w-5 h-5 text-terracotta dark:text-[#E38D69]" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-base font-extrabold text-foret leading-tight truncate">
+              <h1 className="text-base font-extrabold text-foret dark:text-[#EDF2F0] leading-tight truncate">
                 Gestion des Chantiers
               </h1>
-              <span className="text-xs text-foret/70 font-medium">
+              <span className="text-xs text-foret/70 dark:text-[#B8C7C2] font-medium">
                 {catalog.chantiers.length} chantier(s) au catalogue
               </span>
             </div>
@@ -66,7 +66,7 @@ export function Chantiers() {
           <button
             type="button"
             onClick={() => catalog.setIsCreateModalOpen(true)}
-            className="min-h-[48px] px-4 py-2.5 bg-foret hover:bg-foret/90 active:scale-95 text-white text-xs font-bold rounded-2xl flex items-center gap-2 shadow-md shadow-foret/25 transition-all cursor-pointer shrink-0"
+            className="min-h-[48px] px-4 py-2.5 bg-foret hover:bg-foret/90 dark:bg-[#235852] dark:hover:bg-[#2B6962] active:scale-95 text-white text-xs font-bold rounded-2xl flex items-center gap-2 shadow-md shadow-foret/25 dark:shadow-none transition-all cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Nouveau chantier</span>
@@ -75,20 +75,20 @@ export function Chantiers() {
 
         {/* Barre de Recherche Instantanée */}
         <div className="relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-foret/40 pointer-events-none" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-foret/40 dark:text-[#8FA5A0] pointer-events-none" />
           <input
             type="text"
             placeholder="Rechercher par client, adresse, travaux..."
             value={catalog.searchQuery}
             onChange={(e) => catalog.setSearchQuery(e.target.value)}
-            className="w-full min-h-[48px] bg-craie text-xs text-foret pl-10 pr-10 rounded-2xl border border-sable focus:outline-none focus:ring-2 focus:ring-foret/20"
+            className="w-full min-h-[48px] bg-craie dark:bg-[#1E2E2C] text-xs text-foret dark:text-[#EDF2F0] placeholder:text-foret/40 dark:placeholder:text-[#8FA5A0] pl-10 pr-10 rounded-2xl border border-sable dark:border-[#304744] focus:outline-none focus:ring-2 focus:ring-foret/20 dark:focus:ring-sauge/40"
           />
           {catalog.searchQuery && (
             <button
               type="button"
               onClick={() => catalog.setSearchQuery('')}
               aria-label="Effacer la recherche"
-              className="min-w-[48px] min-h-[48px] w-12 h-12 absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center text-foret/40 hover:text-foret cursor-pointer"
+              className="min-w-[48px] min-h-[48px] w-12 h-12 absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center text-foret/40 hover:text-foret dark:text-[#8FA5A0] dark:hover:text-[#EDF2F0] cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -111,8 +111,8 @@ export function Chantiers() {
               onClick={() => catalog.setStatusFilter(tab.key)}
               className={`min-h-[48px] px-4 rounded-2xl font-bold transition-all shrink-0 cursor-pointer active:scale-95 flex items-center justify-center ${
                 catalog.statusFilter === tab.key
-                  ? 'bg-foret text-sable shadow-xs'
-                  : 'bg-craie text-foret/70 hover:text-foret border border-sable/60'
+                  ? 'bg-foret text-sable shadow-xs dark:bg-[#235852] dark:text-[#EDF2F0]'
+                  : 'bg-craie text-foret/70 hover:text-foret border border-sable/60 dark:bg-[#1E2E2C] dark:text-[#B8C7C2] dark:hover:text-[#EDF2F0] dark:border-[#304744]'
               }`}
             >
               {tab.label}
@@ -123,14 +123,14 @@ export function Chantiers() {
 
       {/* 2. Liste des Chantiers */}
       {catalog.loading ? (
-        <div className="bg-white rounded-2xl sm:rounded-3xl p-8 border border-sable text-center text-xs text-foret/60 shadow-soft">
+        <div className="bg-white dark:bg-[#172322] rounded-2xl sm:rounded-3xl p-8 border border-sable dark:border-[#2A3F3C] text-center text-xs text-foret/60 dark:text-[#B8C7C2] shadow-soft">
           Chargement des chantiers...
         </div>
       ) : catalog.filteredChantiers.length === 0 ? (
-        <div className="bg-white rounded-2xl sm:rounded-3xl p-8 border border-sable text-center space-y-2 shadow-soft">
-          <Building className="w-8 h-8 mx-auto text-sauge/50" />
-          <p className="text-xs font-bold text-foret">Aucun chantier trouvé</p>
-          <p className="text-[11px] text-foret/60">
+        <div className="bg-white dark:bg-[#172322] rounded-2xl sm:rounded-3xl p-8 border border-sable dark:border-[#2A3F3C] text-center space-y-2 shadow-soft">
+          <Building className="w-8 h-8 mx-auto text-sauge/50 dark:text-[#9BB89B]/60" />
+          <p className="text-xs font-bold text-foret dark:text-[#EDF2F0]">Aucun chantier trouvé</p>
+          <p className="text-[11px] text-foret/60 dark:text-[#B8C7C2]">
             {catalog.searchQuery
               ? "Modifiez votre recherche pour voir d'autres résultats."
               : 'Cliquez sur « Nouveau chantier » pour en créer un.'}

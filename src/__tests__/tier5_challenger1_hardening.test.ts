@@ -394,10 +394,10 @@ describe('Tier 5 Adversarial Coverage Hardening (Challenger 1)', () => {
       // Safe area padding
       assert.match(appLayoutContent, /pt-safe/, 'AppLayout header must include pt-safe utility');
       assert.match(bottomNavContent, /pb-safe/, 'BottomNav container must include pb-safe utility');
-      assert.match(appLayoutContent, /pb-24/, 'AppLayout main must include bottom padding to clear BottomNav');
+      assert.match(appLayoutContent, /pb-24|pb-28/, 'AppLayout main must include bottom padding to clear BottomNav');
 
       // Container max-w-md centered
-      assert.match(appLayoutContent, /max-w-md min-h-screen flex flex-col bg-craie/, 'AppLayout must center max-w-md container');
+      assert.match(appLayoutContent, /max-w-md\s+flex-1\s+min-h-0\s+flex\s+flex-col\s+bg-craie/, 'AppLayout must center max-w-md container');
 
       // Role label helper in AppLayout
       assert.match(appLayoutContent, /case 'chef_equipe':\s*return 'Chef';/, 'AppLayout must label chef_equipe as Chef');

@@ -117,37 +117,37 @@ export function ChatPreview() {
   return (
     <div className="space-y-4 max-w-md mx-auto pb-6">
       {/* 1. En-tête Biophilique */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-sable/80 shadow-soft space-y-3">
+      <div className="bg-white dark:bg-[#172322] rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-sable/80 dark:border-[#2A3F3C] shadow-soft space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-extrabold text-foret tracking-tight">
+            <h1 className="text-xl font-extrabold text-foret dark:text-[#EDF2F0] tracking-tight">
               Messagerie d'équipe
             </h1>
-            <p className="text-xs text-sauge font-medium mt-0.5">
+            <p className="text-xs text-sauge dark:text-[#9BB89B] font-medium mt-0.5">
               Canaux de communication par chantier & équipe
             </p>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-sable/60 text-foret flex items-center justify-center shrink-0">
-            <MessageSquare className="w-5 h-5 text-terracotta" />
+          <div className="w-10 h-10 rounded-2xl bg-sable/60 dark:bg-[#1E2E2C] text-foret dark:text-[#EDF2F0] flex items-center justify-center shrink-0">
+            <MessageSquare className="w-5 h-5 text-terracotta dark:text-[#E38D69]" />
           </div>
         </div>
 
         {/* Barre de Recherche ergonomique */}
         <div className="relative">
-          <Search className="w-4 h-4 text-foret/40 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-4 h-4 text-foret/40 dark:text-[#8FA5A0] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Rechercher une conversation ou un chantier..."
-            className="w-full min-h-[48px] pl-10 pr-9 bg-craie rounded-2xl border border-sable text-xs text-foret placeholder:text-foret/40 focus:outline-none focus:ring-2 focus:ring-foret/20"
+            className="w-full min-h-[48px] pl-10 pr-9 bg-craie dark:bg-[#1E2E2C] rounded-2xl border border-sable dark:border-[#304744] text-xs text-foret dark:text-[#EDF2F0] placeholder:text-foret/40 dark:placeholder:text-[#8FA5A0] focus:outline-none focus:ring-2 focus:ring-foret/20 dark:focus:ring-sauge/40"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
               aria-label="Effacer la recherche"
-              className="min-w-[48px] min-h-[48px] w-12 h-12 absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center text-foret/40 hover:text-foret cursor-pointer"
+              className="min-w-[48px] min-h-[48px] w-12 h-12 absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center text-foret/40 hover:text-foret dark:text-[#8FA5A0] dark:hover:text-[#EDF2F0] cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -166,11 +166,11 @@ export function ChatPreview() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`min-h-[48px] px-4 rounded-2xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 ${
                   isActive
-                    ? 'bg-foret text-sable shadow-xs'
-                    : 'bg-white text-foret/70 border border-sable/80 hover:bg-craie'
+                    ? 'bg-foret text-sable shadow-xs dark:bg-[#235852] dark:text-[#EDF2F0]'
+                    : 'bg-white text-foret/70 border border-sable/80 hover:bg-craie dark:bg-[#1E2E2C] dark:text-[#B8C7C2] dark:border-[#304744] dark:hover:bg-[#263A37]'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-sauge' : 'text-foret/60'}`} />
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-sauge dark:text-[#9BB89B]' : 'text-foret/60 dark:text-[#8FA5A0]'}`} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -179,14 +179,14 @@ export function ChatPreview() {
       </div>
 
       {/* 2. Bannière Phase 2 Biophilique */}
-      <div className="bg-foret text-sable rounded-2xl sm:rounded-3xl p-4 shadow-soft space-y-1.5 relative overflow-hidden border border-foret/20">
+      <div className="bg-foret dark:bg-[#183330] text-sable dark:text-[#EDF2F0] rounded-2xl sm:rounded-3xl p-4 shadow-soft space-y-1.5 relative overflow-hidden border border-foret/20 dark:border-[#2E5752]">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-terracotta animate-pulse" />
-          <span className="text-xs font-bold uppercase tracking-wider text-sable">
+          <Sparkles className="w-4 h-4 text-terracotta dark:text-[#E38D69] animate-pulse" />
+          <span className="text-xs font-bold uppercase tracking-wider text-sable dark:text-[#D5E6DC]">
             Aperçu Haute Fidélité (Phase 2)
           </span>
         </div>
-        <p className="text-xs text-sable/90 leading-relaxed">
+        <p className="text-xs text-sable/90 dark:text-[#B8C7C2] leading-relaxed">
           Sélectionnez un canal ci-dessous pour tester la messagerie mockée (bulles Vert Forêt & Sable).
           Les WebSockets temps réel seront branchés en Phase 2.
         </p>
@@ -195,10 +195,10 @@ export function ChatPreview() {
       {/* 3. Liste des Canaux */}
       <div className="space-y-2.5">
         {filteredChannels.length === 0 ? (
-          <div className="bg-white rounded-2xl sm:rounded-3xl p-8 border border-sable/80 text-center space-y-2 shadow-soft">
-            <MessageSquare className="w-8 h-8 mx-auto text-sauge/50" />
-            <p className="text-xs font-bold text-foret">Aucun canal trouvé</p>
-            <p className="text-[11px] text-foret/60">
+          <div className="bg-white dark:bg-[#172322] rounded-2xl sm:rounded-3xl p-8 border border-sable/80 dark:border-[#2A3F3C] text-center space-y-2 shadow-soft">
+            <MessageSquare className="w-8 h-8 mx-auto text-sauge/50 dark:text-[#9BB89B]/60" />
+            <p className="text-xs font-bold text-foret dark:text-[#EDF2F0]">Aucun canal trouvé</p>
+            <p className="text-[11px] text-foret/60 dark:text-[#B8C7C2]">
               Modifiez votre recherche ou sélectionnez un autre onglet.
             </p>
           </div>
@@ -211,38 +211,38 @@ export function ChatPreview() {
               <div
                 key={ch.id}
                 onClick={() => handleSelectConversation(ch.id)}
-                className="min-h-[56px] p-4 bg-white rounded-2xl sm:rounded-3xl border border-sable/80 shadow-soft hover:border-sauge transition-all cursor-pointer active:scale-[0.99] flex items-center justify-between gap-3 group"
+                className="min-h-[56px] p-4 bg-white dark:bg-[#172322] rounded-2xl sm:rounded-3xl border border-sable/80 dark:border-[#2A3F3C] shadow-soft hover:border-sauge dark:hover:border-[#4A6B66] transition-all cursor-pointer active:scale-[0.99] flex items-center justify-between gap-3 group"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-11 h-11 rounded-2xl bg-sable/60 text-foret flex items-center justify-center shrink-0 border border-sable/50 group-hover:scale-105 transition-transform">
+                  <div className="w-11 h-11 rounded-2xl bg-sable/60 dark:bg-[#1E2E2C] text-foret dark:text-[#EDF2F0] flex items-center justify-center shrink-0 border border-sable/50 dark:border-[#304744] group-hover:scale-105 transition-transform">
                     {isEquipe ? (
-                      <Trees className="w-5 h-5 text-foret" />
+                      <Trees className="w-5 h-5 text-foret dark:text-[#9BB89B]" />
                     ) : isDirection ? (
-                      <Lock className="w-5 h-5 text-foret/80" />
+                      <Lock className="w-5 h-5 text-foret/80 dark:text-[#B8C7C2]" />
                     ) : (
-                      <Briefcase className="w-5 h-5 text-terracotta" />
+                      <Briefcase className="w-5 h-5 text-terracotta dark:text-[#E38D69]" />
                     )}
                   </div>
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h2 className="text-xs sm:text-sm font-extrabold text-foret truncate">
+                      <h2 className="text-xs sm:text-sm font-extrabold text-foret dark:text-[#EDF2F0] truncate">
                         {ch.title}
                       </h2>
                       {isDirection && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sable text-foret border border-sable/80 shrink-0">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sable text-foret border border-sable/80 dark:bg-[#263A37] dark:text-[#D5E6DC] dark:border-[#38524E] shrink-0">
                           Direction
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-foret/70 truncate mt-0.5">
+                    <p className="text-xs text-foret/70 dark:text-[#B8C7C2] truncate mt-0.5">
                       {ch.subtitle}
                     </p>
                   </div>
                 </div>
 
                 <div className="text-right shrink-0 flex flex-col items-end justify-center">
-                  <span className="text-[11px] text-sauge font-medium block">
+                  <span className="text-[11px] text-sauge dark:text-[#9BB89B] font-medium block">
                     {ch.time}
                   </span>
                   {ch.unreadCount > 0 ? (
@@ -250,7 +250,7 @@ export function ChatPreview() {
                       {ch.unreadCount}
                     </span>
                   ) : (
-                    <Clock className="w-3.5 h-3.5 text-foret/30 inline-block mt-1" />
+                    <Clock className="w-3.5 h-3.5 text-foret/30 dark:text-[#8FA5A0] inline-block mt-1" />
                   )}
                 </div>
               </div>

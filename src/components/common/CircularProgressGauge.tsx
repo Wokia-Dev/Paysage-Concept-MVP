@@ -1,6 +1,7 @@
 import React from 'react';
 import { formatHours } from '../../lib/hours';
 import { Pencil, Check } from 'lucide-react';
+import { useTheme } from '../../context/useTheme';
 
 interface CircularProgressGaugeProps {
   value: number; // Current logged hours
@@ -39,9 +40,19 @@ export const CircularProgressGauge: React.FC<CircularProgressGaugeProps> = ({
   const minutes = Math.round((value - wholeHours) * 60);
   const formattedLargeHours = `${wholeHours}h ${String(minutes).padStart(2, '0')}`;
 
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
   // Gauge arc color based on progress (only met if target reached AND value > 0)
   const isTargetMet = value >= targetSafe && value > 0;
-  const arcColor = isTargetMet ? '#15302F' : '#8FA98F';
+  const arcColor = isDark
+    ? isTargetMet
+      ? '#4EB0A2'
+      : '#8FA98F'
+    : isTargetMet
+      ? '#15302F'
+      : '#8FA98F';
+  const trackColor = isDark ? '#263A37' : '#E8E3D9';
 
   return (
     <div className={`relative flex flex-col items-center justify-center ${className}`}>
@@ -55,8 +66,12 @@ export const CircularProgressGauge: React.FC<CircularProgressGaugeProps> = ({
       >
         <defs>
           <linearGradient id="horseshoeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#15302F" />
-            <stop offset="100%" stopColor={value > targetSafe ? '#C47452' : arcColor} />
+            <stop offset="0%" stopColor={isDark ? '#2B6E66' : '#15302F'} />
+            {isDark ? (
+              <stop offset="100%" stopColor={value > targetSafe ? '#E38D69' : arcColor} />
+            ) : (
+              <stop offset="100%" stopColor={value > targetSafe ? '#C47452' : arcColor} />
+            )}
           </linearGradient>
         </defs>
 
@@ -66,7 +81,7 @@ export const CircularProgressGauge: React.FC<CircularProgressGaugeProps> = ({
           cy={center}
           r={radius}
           fill="none"
-          stroke="#E8E3D9"
+          stroke={trackColor}
           strokeWidth={strokeWidth}
           strokeDasharray={`${arcLength} ${gapLength}`}
           strokeDashoffset={0}
@@ -94,7 +109,7 @@ export const CircularProgressGauge: React.FC<CircularProgressGaugeProps> = ({
       {/* Centered Typography & Info */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pt-2 text-center pointer-events-none">
         {/* Hours Display (32px+ bold) */}
-        <span className="text-3xl font-black text-foret tracking-tight leading-none">
+        <span className="text-3xl font-black text-foret dark:text-[#EDF2F0] tracking-tight leading-none">
           {formattedLargeHours}
         </span>
 
@@ -109,8 +124,8 @@ export const CircularProgressGauge: React.FC<CircularProgressGaugeProps> = ({
               }}
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 ${
                 isEditingTarget
-                  ? 'bg-foret text-white border-foret ring-2 ring-sauge/50'
-                  : 'bg-craie/90 hover:bg-white text-foret border-sable/80 hover:border-sauge hover:shadow-xs'
+                  ? 'bg-foret text-white border-foret ring-2 ring-sauge/50 dark:bg-[#235852] dark:border-[#397A75]'
+                  : 'bg-craie/90 hover:bg-white text-foret border-sable/80 hover:border-sauge hover:shadow-xs dark:bg-[#1E2E2C] dark:hover:bg-[#263A37] dark:text-[#EDF2F0] dark:border-[#354F4C]'
               }`}
               title="Modifier l'objectif journalier"
               aria-label="Modifier l'objectif journalier"
@@ -118,7 +133,7 @@ export const CircularProgressGauge: React.FC<CircularProgressGaugeProps> = ({
               <span className="text-xs font-bold tracking-tight">
                 Objectif : {formatHours(targetSafe)}
               </span>
-              <span className={`p-0.5 rounded-full flex items-center justify-center ${isEditingTarget ? 'text-emerald-400' : 'text-sauge'}`}>
+              <span className={`p-0.5 rounded-full flex items-center justify-center ${isEditingTarget ? 'text-emerald-400' : 'text-sauge dark:text-[#9BB89B]'}`}>
                 {isEditingTarget ? (
                   <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                 ) : (
@@ -127,7 +142,7 @@ export const CircularProgressGauge: React.FC<CircularProgressGaugeProps> = ({
               </span>
             </button>
           ) : (
-            <span className="text-xs font-semibold text-foret/70">
+            <span className="text-xs font-semibold text-foret/70 dark:text-[#B8C7C2]">
               Objectif : {formatHours(targetSafe)}
             </span>
           )}
@@ -137,10 +152,10 @@ export const CircularProgressGauge: React.FC<CircularProgressGaugeProps> = ({
         <span
           className={`mt-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
             isTargetMet
-              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/75 dark:text-emerald-300 dark:border-emerald-700/60'
               : value > 0
-              ? 'bg-sable/60 text-foret font-semibold'
-              : 'bg-sable/40 text-foret/70 font-medium'
+              ? 'bg-sable/60 text-foret font-semibold dark:bg-[#263A37] dark:text-[#EDF2F0]'
+              : 'bg-sable/40 text-foret/70 font-medium dark:bg-[#1E2E2C] dark:text-[#9BB89B]'
           }`}
         >
           {isTargetMet ? (

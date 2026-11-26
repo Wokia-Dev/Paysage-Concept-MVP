@@ -92,7 +92,7 @@ export function AppLayout() {
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (!mainRef.current) return;
+    if (!mainRef.current || e.touches.length === 0) return;
     const targetEl = e.target as HTMLElement | null;
     if (targetEl?.closest('[role="dialog"]')) return;
 
@@ -102,7 +102,7 @@ export function AppLayout() {
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!mainRef.current || touchStartY.current === null) return;
+    if (!mainRef.current || touchStartY.current === null || e.touches.length === 0) return;
     const targetEl = e.target as HTMLElement | null;
     if (targetEl?.closest('[role="dialog"]')) return;
 
@@ -120,20 +120,20 @@ export function AppLayout() {
 
   return (
     <div
-      className="min-h-screen h-screen h-[100dvh] bg-craie flex flex-col items-center justify-start text-foret font-sans antialiased overflow-hidden"
+      className="fixed inset-0 h-dvh bg-craie dark:bg-[#0F1716] flex flex-col items-center justify-start text-foret dark:text-[#EDF2F0] font-sans antialiased overflow-hidden"
       onWheel={handleWheel}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       {/* Top Safe Area Status Bar Cover: Keeps top safe-area and status bar appearance Forest Green (#15302F) across all routes during scroll */}
-      <div className="fixed top-0 left-0 right-0 h-[env(safe-area-inset-top,0px)] bg-foret z-40 pointer-events-none" />
+      <div className="fixed top-0 left-0 right-0 h-[env(safe-area-inset-top,0px)] bg-foret z-40 pointer-events-none dark:bg-[#0F1D1C]" />
 
       {/* Container mobile standardisé (max-w-md) avec centrage sur desktop */}
-      <div className="w-full max-w-md min-h-screen flex flex-col bg-craie h-screen h-[100dvh] shadow-soft relative border-sable/40 mx-auto overflow-hidden">
+      <div className="w-full max-w-md flex-1 min-h-0 flex flex-col bg-craie dark:bg-[#0F1716] shadow-soft relative border-sable/40 dark:border-[#2A3F3C] mx-auto overflow-hidden">
         {/* Header persistant Vert Forêt incurvé (masqué sur l'accueil au profit du hero header unifié) */}
         {!isHome && (
-          <header className="sticky top-0 z-30 bg-foret text-blanc px-4 pt-safe pb-4 rounded-b-2xl shadow-soft flex items-center justify-between border-b border-sauge/20 shrink-0">
+          <header className="sticky top-0 z-30 bg-foret text-blanc dark:bg-[#0F1D1C] px-4 pt-safe pb-4 rounded-b-2xl shadow-soft flex items-center justify-between border-b border-sauge/20 dark:border-[#2A3F3C] shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-sauge/20 border border-sauge/30 flex items-center justify-center text-sauge shadow-xs shrink-0">
                 <LogoOutline className="w-5 h-5 text-sauge" />
@@ -164,7 +164,7 @@ export function AppLayout() {
         <main
           ref={mainRef}
           tabIndex={-1}
-          className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-4 py-4 pb-24 pb-[calc(env(safe-area-inset-bottom)+5rem)] no-scrollbar focus:outline-none"
+          className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain touch-pan-y px-4 py-4 pb-24 pb-[calc(env(safe-area-inset-bottom,0px)+6.5rem)] no-scrollbar focus:outline-none"
         >
           <Outlet />
         </main>

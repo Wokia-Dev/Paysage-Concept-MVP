@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-foret: #15302F;
   --color-sauge: #8FA98F;
@@ -79,4 +81,40 @@ body {
 
 .btn-action-primary:active {
   transform: scale(0.98);
+}
+
+/* Mode sombre — Palette Ardoise Forestière (préserve 100 % du thème clair ci-dessus) */
+html.light {
+  color-scheme: light;
+}
+
+html.dark {
+  background-color: #0F1D1C;
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #0F1716;
+  color: #EDF2F0;
+}
+
+html.dark .shadow-soft {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+html.dark .btn-action-primary {
+  background-color: #235852;
+  color: #F2F7F5;
+  border: 1px solid rgba(57, 122, 117, 0.55);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+html.dark .btn-action-primary:hover {
+  background-color: #2B6962;
+}
+
+html.dark input[type="date"],
+html.dark input[type="time"],
+html.dark select {
+  color-scheme: dark;
 }

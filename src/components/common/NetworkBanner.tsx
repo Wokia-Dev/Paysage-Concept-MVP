@@ -76,8 +76,8 @@ export function NetworkBanner() {
       <div
         className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
           isOnline
-            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/60'
-            : 'bg-amber-50 text-amber-800 border border-amber-200/60'
+            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/60 dark:bg-emerald-950/75 dark:text-emerald-300 dark:border-emerald-700/60'
+            : 'bg-amber-50 text-amber-800 border border-amber-200/60 dark:bg-amber-950/75 dark:text-amber-300 dark:border-amber-700/60'
         }`}
       >
         {isOnline ? (
@@ -103,12 +103,12 @@ export function NetworkBanner() {
           disabled={!isOnline || isSyncing}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold shadow-xs transition-all active:scale-95 ${
             isOnline
-              ? 'bg-terracotta/10 text-terracotta border border-terracotta/30 hover:bg-terracotta/20 cursor-pointer'
-              : 'bg-sable/70 text-foret/70 border border-sable'
+              ? 'bg-terracotta/10 text-terracotta border border-terracotta/30 hover:bg-terracotta/20 cursor-pointer dark:bg-terracotta/20 dark:text-[#F0A07E] dark:border-terracotta/40 dark:hover:bg-terracotta/30'
+              : 'bg-sable/70 text-foret/70 border border-sable dark:bg-[#263A37] dark:text-[#B8C7C2] dark:border-[#354F4C]'
           }`}
           title={isOnline ? 'Cliquer pour synchroniser immédiatement' : 'Pointages stockés localement'}
         >
-          <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-terracotta' : ''}`} />
+          <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-terracotta dark:text-[#F0A07E]' : ''}`} />
           <span>{pendingCount} en attente</span>
         </button>
       )}

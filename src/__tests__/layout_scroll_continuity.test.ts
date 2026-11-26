@@ -23,23 +23,28 @@ describe('Layout Scroll Continuity & Viewport Overflow Management', () => {
   const homeContent = readFileSync(homePath, 'utf-8');
 
   describe('Dimension 1: Container Height & Flex Scroll Context Establishment', () => {
-    it('verifies outer shell establishes fixed viewport bounds with dynamic viewport height and overflow-hidden', () => {
+    it('verifies outer shell establishes fixed viewport bounds with dynamic viewport height and overflow-hidden without min-h-screen/h-screen override', () => {
       assert.match(
         appLayout,
-        /h-screen\s+h-\[100dvh\][\s\S]*?overflow-hidden/,
-        'Outer container must bound height to 100dvh and prevent outer page overflow'
+        /fixed\s+inset-0\s+h-dvh[\s\S]*?overflow-hidden/,
+        'Outer container must use fixed inset-0 h-dvh and prevent outer page overflow'
+      );
+      assert.doesNotMatch(
+        appLayout,
+        /\bmin-h-screen\b|\bh-screen\b/,
+        'Shell must NOT use 100vh utilities (min-h-screen/h-screen) that override 100dvh and trap scroll on mobile browsers'
       );
     });
 
-    it('verifies inner centered mobile container enforces h-screen and h-[100dvh] alongside max-w-md min-h-screen', () => {
+    it('verifies inner centered mobile container enforces flex-1 min-h-0 alongside max-w-md', () => {
       assert.match(
         appLayout,
-        /max-w-md min-h-screen flex flex-col bg-craie/,
-        'Inner container must preserve standard mobile centered shell test contract'
+        /max-w-md\s+flex-1\s+min-h-0\s+flex\s+flex-col\s+bg-craie/,
+        'Inner container must preserve standard mobile centered shell and constrain flex height'
       );
       assert.match(
         appLayout,
-        /h-screen\s+h-\[100dvh\][\s\S]*?overflow-hidden/,
+        /flex-1\s+min-h-0\s+flex\s+flex-col[\s\S]*?overflow-hidden/,
         'Inner mobile container must constrain vertical height and hide overflow so main handles scroll'
       );
     });
@@ -118,13 +123,18 @@ describe('Layout Scroll Continuity & Viewport Overflow Management', () => {
     it('verifies main scroll container provides adequate bottom clearance for fixed BottomNav', () => {
       assert.match(
         appLayout,
-        /pb-24/,
-        'main container must include pb-24 clearance for BottomNav'
+        /pb-24|pb-28/,
+        'main container must include >= 6rem bottom clearance for BottomNav'
       );
       assert.match(
         appLayout,
-        /pb-\[calc\(env\(safe-area-inset-bottom\)\+5rem\)\]/,
-        'main container must add safe-area inset bottom padding'
+        /pb-\[calc\(env\(safe-area-inset-bottom,\s*0px\)\s*\+\s*6\.5rem\)\]/,
+        'main container must add safe-area inset bottom padding with 0px fallback and full BottomNav clearance'
+      );
+      assert.match(
+        appLayout,
+        /<main[^>]*className="[^"]*touch-pan-y[^"]*"/,
+        'main container must explicitly allow vertical touch panning'
       );
     });
   });

@@ -16,22 +16,22 @@ export function Planning() {
       {/* En-tête & Toggle à 3 états (Jour | Semaine | Mois) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-extrabold text-foret">Planning</h1>
-          <p className="text-xs text-sauge">
+          <h1 className="text-xl font-extrabold text-foret dark:text-[#EDF2F0]">Planning</h1>
+          <p className="text-xs text-sauge dark:text-[#9BB89B]">
             {profile?.role === 'ouvrier'
               ? 'Vos missions personnelles planifiées'
               : "Missions et planning d'équipe"}
           </p>
         </div>
 
-        <div className="flex bg-sable/60 p-1 rounded-2xl text-xs font-semibold text-foret/80 self-start sm:self-auto shadow-xs border border-sable/50">
+        <div className="flex bg-sable/60 dark:bg-[#1E2E2C] p-1 rounded-2xl text-xs font-semibold text-foret/80 dark:text-[#B8C7C2] self-start sm:self-auto shadow-xs border border-sable/50 dark:border-[#304744]">
           <button
             type="button"
             onClick={() => planning.setViewMode('day')}
             className={`min-h-[48px] min-w-[64px] px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center font-bold active:scale-95 ${
               planning.viewMode === 'day'
-                ? 'bg-white text-foret shadow-xs'
-                : 'hover:text-foret text-foret/70'
+                ? 'bg-white text-foret shadow-xs dark:bg-[#2A423F] dark:text-[#EDF2F0]'
+                : 'hover:text-foret text-foret/70 dark:text-[#B8C7C2] dark:hover:text-[#EDF2F0]'
             }`}
           >
             Jour
@@ -41,8 +41,8 @@ export function Planning() {
             onClick={() => planning.setViewMode('week')}
             className={`min-h-[48px] min-w-[72px] px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center font-bold active:scale-95 ${
               planning.viewMode === 'week'
-                ? 'bg-white text-foret shadow-xs'
-                : 'hover:text-foret text-foret/70'
+                ? 'bg-white text-foret shadow-xs dark:bg-[#2A423F] dark:text-[#EDF2F0]'
+                : 'hover:text-foret text-foret/70 dark:text-[#B8C7C2] dark:hover:text-[#EDF2F0]'
             }`}
           >
             Semaine
@@ -55,8 +55,8 @@ export function Planning() {
             }}
             className={`min-h-[48px] min-w-[64px] px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center font-bold active:scale-95 ${
               planning.viewMode === 'month'
-                ? 'bg-white text-foret shadow-xs'
-                : 'hover:text-foret text-foret/70'
+                ? 'bg-white text-foret shadow-xs dark:bg-[#2A423F] dark:text-[#EDF2F0]'
+                : 'hover:text-foret text-foret/70 dark:text-[#B8C7C2] dark:hover:text-[#EDF2F0]'
             }`}
           >
             Mois
@@ -66,20 +66,20 @@ export function Planning() {
 
       {/* Sélecteur de supervision pour Chef d'équipe & Admin */}
       {isSupervisor && profile && (
-        <div className="bg-white rounded-2xl p-3 border border-sable/80 shadow-xs space-y-2">
+        <div className="bg-white dark:bg-[#172322] rounded-2xl p-3 border border-sable/80 dark:border-[#2A3F3C] shadow-xs space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-bold text-sauge uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="font-bold text-sauge dark:text-[#9BB89B] uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               Vue du planning
             </span>
-            <span className="text-[11px] text-foret/60">Filtrer par équipier</span>
+            <span className="text-[11px] text-foret/60 dark:text-[#B8C7C2]">Filtrer par équipier</span>
           </div>
 
           <div className="flex gap-2">
             <select
               value={planning.supervisorFilter}
               onChange={(e) => planning.setSupervisorFilter(e.target.value)}
-              className="w-full min-h-[48px] text-xs font-bold text-foret bg-craie rounded-xl p-2.5 border border-sable focus:outline-none focus:ring-2 focus:ring-foret/20 appearance-none pr-8 cursor-pointer"
+              className="w-full min-h-[48px] text-xs font-bold text-foret dark:text-[#EDF2F0] bg-craie dark:bg-[#1E2E2C] rounded-xl p-2.5 border border-sable dark:border-[#304744] focus:outline-none focus:ring-2 focus:ring-foret/20 dark:focus:ring-sauge/40 appearance-none pr-8 cursor-pointer"
             >
               <option value="mine">
                 👤 Mon planning personnel ({profile.prenom} {profile.nom})

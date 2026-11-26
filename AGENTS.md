@@ -54,8 +54,9 @@ npx tsc -p tsconfig.node.json --strict --noEmit
 
 ### Architecture & Séparation UI / Logique métier
 - **Organisation des modules** :
-  - `src/types/` : interfaces métier partagées (`database.ts`, `chat.ts`).
-  - `src/lib/` : logique métier pure et services sans dépendance React (`hours.ts`, `hoursAnalytics.ts`, `planningUtils.ts`, `dates.ts`, `formatters.ts`, `weather.ts`, `db.ts`, `sync.ts`, `chantiersService.ts`, `supabase.ts`).
+  - `src/types/` : interfaces métier partagées (`database.ts`, `chat.ts`, `theme.ts`).
+  - `src/lib/` : logique métier pure et services sans dépendance React (`hours.ts`, `hoursAnalytics.ts`, `planningUtils.ts`, `dates.ts`, `formatters.ts`, `weather.ts`, `theme.ts`, `db.ts`, `sync.ts`, `chantiersService.ts`, `supabase.ts`).
+  - `src/context/` : contextes globaux et hooks associés (`AuthContext.tsx`/`useAuth.ts`, `ThemeContext.tsx`/`useTheme.ts`).
   - `src/hooks/` : hooks d'état et d'orchestration par page (`useHomeDashboard.ts`, `usePlanningData.ts`, `useChantiersCatalog.ts`, `useChantierDetail.ts`, `usePlusDiagnostics.ts`).
   - `src/components/` : sous-composants modulaires classés par domaine (`analytics/`, `auth/`, `chantiers/`, `common/`, `home/`, `layout/`, `modules/`, `planning/`).
   - `src/pages/` : pages légères chargées en lazy-loading via `React.lazy` + `Suspense` dans [src/App.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/App.tsx) (sauf `Home` qui reste eager pour l'écran d'accueil offline).
@@ -67,6 +68,11 @@ npx tsc -p tsconfig.node.json --strict --noEmit
 
 ### Ergonomie & Design System (`src/index.css`)
 - **Tokens obligatoires** : `--color-foret` (`#15302F`), `--color-sauge` (`#8FA98F`), `--color-sable` (`#E8E3D9`), `--color-craie` (`#FAFAFB`), `--color-terracotta` (`#C47452`), `--color-blanc` (`#FFFFFF`), `--color-muted` (`#6B7280`).
+- **Mode Sombre (« Ardoise Forestière ») & Préservation du thème clair** :
+  - Piloté par `@custom-variant dark (&:where(.dark, .dark *));` dans `src/index.css` et géré via `ThemeProvider` / `useTheme()`.
+  - Toute nouvelle vue ou composant doit inclure ses variantes `dark:` cohérentes avec la hiérarchie de surfaces : canvas `dark:bg-[#0F1716]`, cartes/modales `dark:bg-[#172322] dark:border-[#2A3F3C]`, tuiles/champs `dark:bg-[#1E2E2C] dark:border-[#304744]`, textes `dark:text-[#EDF2F0]` / `dark:text-[#B8C7C2]` / `dark:text-[#9BB89B]`, CTA Vert Forêt lumineux `dark:bg-[#235852] dark:hover:bg-[#2B6962]`, et accent terracotta `dark:text-[#E38D69]`.
+  - Pour les rendus SVG / canvas (`CircularProgressGauge`, `HoursBarChartSVG`), consommer `useTheme().resolvedTheme` plutôt que des couleurs en dur non adaptées.
+  - **Règle d'intangibilité du thème clair :** ne jamais modifier les tokens `@theme` ni réorganiser l'ordre des classes claires ; toujours **ajouter** les variantes `dark:` après les classes claires existantes.
 - **Terrain plein soleil** : cibles tactiles minimales `48x48px` (`min-w-[48px] min-h-[48px]`), contraste WCAG AA, support des safe-areas iOS/Android (`pt-safe`, `pb-safe`, `env(safe-area-inset-*)`).
 - **Chat Phase 2** : [ChatPreview.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/pages/ChatPreview.tsx) et [ChatRoomView.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/components/modules/ChatRoomView.tsx) utilisent des données mockées statiques — ne pas brancher de canal Supabase Realtime sans demande explicite.
 

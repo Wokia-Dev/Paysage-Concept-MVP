@@ -107,21 +107,21 @@ export const HoursAnalyticsSection: React.FC<HoursAnalyticsSectionProps> = ({
   }, [periodPointages]);
 
   return (
-    <section className="bg-white rounded-3xl p-5 border border-sable/80 shadow-soft space-y-5">
+    <section className="bg-white dark:bg-[#172322] rounded-3xl p-5 border border-sable/80 dark:border-[#2A3F3C] shadow-soft space-y-5">
       {/* 1. En-tête de section avec sélecteur de période */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-sable/40 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-sable/40 dark:border-[#2A3F3C] pb-4">
         <div>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-sauge flex items-center gap-1.5">
-            <BarChart3 className="w-4 h-4 text-foret" />
+          <h2 className="text-xs font-bold uppercase tracking-wider text-sauge dark:text-[#9BB89B] flex items-center gap-1.5">
+            <BarChart3 className="w-4 h-4 text-foret dark:text-[#9BB89B]" />
             Analyse & Historique des heures
           </h2>
-          <p className="text-xs text-foret/70 font-medium mt-0.5">
+          <p className="text-xs text-foret/70 dark:text-[#B8C7C2] font-medium mt-0.5">
             Suivi cumulé, heures supplémentaires et registre déclaratif
           </p>
         </div>
 
         {/* Toggle Semaine / Mois */}
-        <div className="inline-flex items-center p-1 rounded-2xl bg-craie border border-sable/80 shadow-2xs self-start sm:self-auto">
+        <div className="inline-flex items-center p-1 rounded-2xl bg-craie dark:bg-[#1E2E2C] border border-sable/80 dark:border-[#304744] shadow-2xs self-start sm:self-auto">
           <button
             type="button"
             onClick={() => {
@@ -130,8 +130,8 @@ export const HoursAnalyticsSection: React.FC<HoursAnalyticsSectionProps> = ({
             }}
             className={`min-h-[36px] px-3.5 py-1 text-xs font-bold rounded-xl transition-all cursor-pointer ${
               periodMode === 'week'
-                ? 'bg-foret text-white shadow-xs'
-                : 'text-foret/70 hover:text-foret hover:bg-sable/30'
+                ? 'bg-foret text-white shadow-xs dark:bg-[#235852]'
+                : 'text-foret/70 hover:text-foret hover:bg-sable/30 dark:text-[#B8C7C2] dark:hover:text-[#EDF2F0] dark:hover:bg-[#263A37]'
             }`}
           >
             Semaine
@@ -144,8 +144,8 @@ export const HoursAnalyticsSection: React.FC<HoursAnalyticsSectionProps> = ({
             }}
             className={`min-h-[36px] px-3.5 py-1 text-xs font-bold rounded-xl transition-all cursor-pointer ${
               periodMode === 'month'
-                ? 'bg-foret text-white shadow-xs'
-                : 'text-foret/70 hover:text-foret hover:bg-sable/30'
+                ? 'bg-foret text-white shadow-xs dark:bg-[#235852]'
+                : 'text-foret/70 hover:text-foret hover:bg-sable/30 dark:text-[#B8C7C2] dark:hover:text-[#EDF2F0] dark:hover:bg-[#263A37]'
             }`}
           >
             Mois
@@ -154,11 +154,11 @@ export const HoursAnalyticsSection: React.FC<HoursAnalyticsSectionProps> = ({
       </div>
 
       {/* 2. Barre de Navigation Temporelle */}
-      <div className="flex items-center justify-between bg-craie px-3.5 py-2.5 rounded-2xl border border-sable/60 shadow-2xs">
+      <div className="flex items-center justify-between bg-craie dark:bg-[#1E2E2C] px-3.5 py-2.5 rounded-2xl border border-sable/60 dark:border-[#304744] shadow-2xs">
         <button
           type="button"
           onClick={handlePrevPeriod}
-          className="min-w-[40px] min-h-[40px] rounded-xl bg-white hover:bg-sable/50 border border-sable text-foret flex items-center justify-center transition-colors cursor-pointer shadow-2xs active:scale-95"
+          className="min-w-[40px] min-h-[40px] rounded-xl bg-white hover:bg-sable/50 border border-sable text-foret flex items-center justify-center transition-colors cursor-pointer shadow-2xs active:scale-95 dark:bg-[#172322] dark:hover:bg-[#263A37] dark:border-[#304744] dark:text-[#EDF2F0]"
           title={periodMode === 'week' ? 'Semaine précédente' : 'Mois précédent'}
           aria-label={periodMode === 'week' ? 'Semaine précédente' : 'Mois précédent'}
         >
@@ -166,8 +166,8 @@ export const HoursAnalyticsSection: React.FC<HoursAnalyticsSectionProps> = ({
         </button>
 
         <div className="text-center px-2">
-          <span className="text-xs font-bold text-foret block tracking-tight">{periodLabel}</span>
-          <span className="text-[10px] text-sauge font-medium">
+          <span className="text-xs font-bold text-foret dark:text-[#EDF2F0] block tracking-tight">{periodLabel}</span>
+          <span className="text-[10px] text-sauge dark:text-[#9BB89B] font-medium">
             Objectif de référence : {formatHours(dailyTarget)} / jour
           </span>
         </div>
@@ -177,7 +177,7 @@ export const HoursAnalyticsSection: React.FC<HoursAnalyticsSectionProps> = ({
             <button
               type="button"
               onClick={handleJumpToday}
-              className="min-h-[32px] px-2.5 py-1 text-[11px] font-bold rounded-xl bg-white hover:bg-sable/50 border border-sable text-foret transition-colors cursor-pointer hidden xs:inline-flex items-center shadow-2xs"
+              className="min-h-[32px] px-2.5 py-1 text-[11px] font-bold rounded-xl bg-white hover:bg-sable/50 border border-sable text-foret transition-colors cursor-pointer hidden xs:inline-flex items-center shadow-2xs dark:bg-[#172322] dark:hover:bg-[#263A37] dark:border-[#304744] dark:text-[#EDF2F0]"
             >
               Aujourd'hui
             </button>
@@ -186,7 +186,7 @@ export const HoursAnalyticsSection: React.FC<HoursAnalyticsSectionProps> = ({
           <button
             type="button"
             onClick={handleNextPeriod}
-            className="min-w-[40px] min-h-[40px] rounded-xl bg-white hover:bg-sable/50 border border-sable text-foret flex items-center justify-center transition-colors cursor-pointer shadow-2xs active:scale-95"
+            className="min-w-[40px] min-h-[40px] rounded-xl bg-white hover:bg-sable/50 border border-sable text-foret flex items-center justify-center transition-colors cursor-pointer shadow-2xs active:scale-95 dark:bg-[#172322] dark:hover:bg-[#263A37] dark:border-[#304744] dark:text-[#EDF2F0]"
             title={periodMode === 'week' ? 'Semaine suivante' : 'Mois suivant'}
             aria-label={periodMode === 'week' ? 'Semaine suivante' : 'Mois suivant'}
           >
@@ -197,53 +197,53 @@ export const HoursAnalyticsSection: React.FC<HoursAnalyticsSectionProps> = ({
 
       {/* 3. Synthèse des Métriques Clés (KPI Cards) */}
       <div className="grid grid-cols-3 gap-2.5">
-        <div className="bg-craie rounded-2xl p-3 border border-sable/80 shadow-2xs flex flex-col justify-between">
+        <div className="bg-craie dark:bg-[#1E2E2C] rounded-2xl p-3 border border-sable/80 dark:border-[#304744] shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-sauge">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-sauge dark:text-[#9BB89B]">
               Total travaillé
             </span>
-            <Clock className="w-3.5 h-3.5 text-foret" />
+            <Clock className="w-3.5 h-3.5 text-foret dark:text-[#9BB89B]" />
           </div>
           <div className="mt-2">
-            <span className="text-lg sm:text-xl font-black text-foret block leading-none">
+            <span className="text-lg sm:text-xl font-black text-foret dark:text-[#EDF2F0] block leading-none">
               {formatHours(metrics.totalHours)}
             </span>
-            <span className="text-[10px] text-sauge font-medium mt-1 block">
+            <span className="text-[10px] text-sauge dark:text-[#9BB89B] font-medium mt-1 block">
               {metrics.workedDaysCount} jour{metrics.workedDaysCount > 1 ? 's' : ''} déclaré
               {metrics.workedDaysCount > 1 ? 's' : ''}
             </span>
           </div>
         </div>
 
-        <div className="bg-terracotta/5 rounded-2xl p-3 border border-terracotta/20 shadow-2xs flex flex-col justify-between">
+        <div className="bg-terracotta/5 dark:bg-[#2A1D19] rounded-2xl p-3 border border-terracotta/20 dark:border-terracotta/40 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-terracotta">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-terracotta dark:text-[#E38D69]">
               Heures sup.
             </span>
-            <TrendingUp className="w-3.5 h-3.5 text-terracotta" />
+            <TrendingUp className="w-3.5 h-3.5 text-terracotta dark:text-[#E38D69]" />
           </div>
           <div className="mt-2">
-            <span className="text-lg sm:text-xl font-black text-terracotta block leading-none">
+            <span className="text-lg sm:text-xl font-black text-terracotta dark:text-[#E38D69] block leading-none">
               {formatHours(metrics.totalOvertime)}
             </span>
-            <span className="text-[10px] text-terracotta/80 font-medium mt-1 block">
+            <span className="text-[10px] text-terracotta/80 dark:text-[#E8A082] font-medium mt-1 block">
               {metrics.totalOvertime > 0 ? `dont ${formatHours(metrics.totalOvertime)} sup` : 'Aucune sup.'}
             </span>
           </div>
         </div>
 
-        <div className="bg-craie rounded-2xl p-3 border border-sable/80 shadow-2xs flex flex-col justify-between">
+        <div className="bg-craie dark:bg-[#1E2E2C] rounded-2xl p-3 border border-sable/80 dark:border-[#304744] shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-sauge">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-sauge dark:text-[#9BB89B]">
               Total pauses
             </span>
-            <Sparkles className="w-3.5 h-3.5 text-sauge" />
+            <Sparkles className="w-3.5 h-3.5 text-sauge dark:text-[#9BB89B]" />
           </div>
           <div className="mt-2">
-            <span className="text-lg sm:text-xl font-black text-foret/80 block leading-none">
+            <span className="text-lg sm:text-xl font-black text-foret/80 dark:text-[#EDF2F0] block leading-none">
               {formatHours(metrics.totalPause)}
             </span>
-            <span className="text-[10px] text-sauge font-medium mt-1 block">Temps de pause</span>
+            <span className="text-[10px] text-sauge dark:text-[#9BB89B] font-medium mt-1 block">Temps de pause</span>
           </div>
         </div>
       </div>

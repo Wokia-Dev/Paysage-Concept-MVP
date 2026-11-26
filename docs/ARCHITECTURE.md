@@ -10,7 +10,7 @@ Ce document décrit l'architecture réelle du dépôt telle qu'implémentée en 
 Paysage-Concept-MVP/
 ├── .github/workflows/deploy.yml      # CI/CD GitHub Pages : npm ci, build avec VITE_BASE_PATH, copie dist/index.html -> dist/404.html
 ├── .env.example                      # Modèle de configuration Supabase (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
-├── index.html                        # Point d'entrée HTML, meta PWA iOS/Android, viewport-fit=cover, theme-color #15302F
+├── index.html                        # Point d'entrée HTML, meta PWA iOS/Android, viewport-fit=cover, script synchrone anti-FOUC (thème & theme-color)
 ├── package.json                      # Dépendances et scripts (dev, build, test, lint, preview)
 ├── vite.config.ts                    # Config Vite + React + Tailwind v4 + VitePWA (manifest, Workbox generateSW)
 ├── tsconfig.json                     # Références tsconfig.app.json & tsconfig.node.json
@@ -29,19 +29,23 @@ Paysage-Concept-MVP/
 ├── dev-dist/                         # Artefacts Service Worker générés en dev (devOptions.enabled: true)
 └── src/
     ├── main.tsx                      # Montage React 19 StrictMode -> App
-    ├── App.tsx                       # AuthProvider, BrowserRouter, code-splitting React.lazy + Suspense, gardes de routes
-    ├── index.css                     # @import "tailwindcss", @theme tokens, .pb-safe, .pt-safe, .shadow-soft, .touch-target, .btn-action-primary
+    ├── App.tsx                       # ThemeProvider, AuthProvider, BrowserRouter, code-splitting React.lazy + Suspense, gardes de routes
+    ├── index.css                     # @import "tailwindcss", @custom-variant dark, @theme tokens, règles html.dark, .pb-safe, .pt-safe, .shadow-soft, .touch-target, .btn-action-primary
     ├── assets/
     │   └── logo.png                  # Logo importé par Login.tsx et Plus.tsx
     ├── types/
     │   ├── database.ts               # Types métier : UserRole, ChantierStatut, Profile, Chantier, Affectation, Pointage, PointageLocal
-    │   └── chat.ts                   # Types Chat mock : ChannelCategory, FilterCategory, ChatMessage, ChatConversation
+    │   ├── chat.ts                   # Types Chat mock : ChannelCategory, FilterCategory, ChatMessage, ChatConversation
+    │   └── theme.ts                  # Types Thème : ThemePreference ('system' | 'light' | 'dark'), ResolvedTheme ('light' | 'dark')
     ├── data/
     │   └── mockChannels.ts           # Canaux et messages statiques Phase 2
     ├── context/
     │   ├── auth-context-base.ts      # Définition AuthContext & AuthContextType
     │   ├── AuthContext.tsx           # Provider auth offline-first (restauration Dexie + session Supabase + démo)
-    │   └── useAuth.ts                # Hook d'accès sécurisé au contexte AuthContext
+    │   ├── useAuth.ts                # Hook d'accès sécurisé au contexte AuthContext
+    │   ├── theme-context-base.ts     # Définition ThemeContext & ThemeContextType
+    │   ├── ThemeContext.tsx          # Provider thème (préférence, écoute OS prefers-color-scheme & storage, synchro DOM/meta)
+    │   └── useTheme.ts               # Hook d'accès sécurisé au contexte ThemeContext
     ├── lib/
     │   ├── supabase.ts               # Client Supabase (import.meta.env protégé pour Node + fallback)
     │   ├── db.ts                     # Base IndexedDB Dexie v2 (PaysageConceptDB) + seed initial (profils, chantiers, affectations, exemples)
@@ -52,6 +56,7 @@ Paysage-Concept-MVP/
     │   ├── planningUtils.ts          # Calculs purs grilles mois, semaines, filtrage missions et présence équipe
     │   ├── dates.ts                  # Utilitaires dates UTC sans dérive (getTodayDateString, parseMiddayUTC, formatISODate, ISO week, formats FR)
     │   ├── formatters.ts             # Helpers UI purs partagés (generateUUID, getRoleLabel, getInitials, getStatusBadge, getMapsUrl, sanitizePhoneHref)
+    │   ├── theme.ts                  # Logique pure thème : lecture/écriture localStorage, résolution OS, application DOM & meta theme-color
     │   └── weather.ts                # Fetch météo Open-Meteo (timeout 3s) + fallback hors-ligne
     ├── hooks/
     │   ├── useHomeDashboard.ts       # État, synchro initiale unique, modale et actions de pointage du tableau de bord
@@ -69,6 +74,7 @@ Paysage-Concept-MVP/
     │   │   ├── HoursAnalyticsSection.tsx  # Onglet analytique (orchestration KPI + sous-composants SVG/historique)
     │   │   ├── LogoOutline.tsx            # Logo vectoriel inline (variantes mark et full)
     │   │   ├── NetworkBanner.tsx          # Pastille En ligne / Hors-ligne + compteur pointages non synchronisés + synchro manuelle
+    │   │   ├── ThemeSelector.tsx          # Sélecteur de thème 3 états (Système / Clair / Sombre) + variante compacte
     │   │   └── WeeklyCalendarStrip.tsx    # Bandeau 7 jours dans le header Home (navigation semaine + Aujourd'hui)
     │   ├── analytics/
     │   │   ├── HoursBarChartSVG.tsx       # Graphique SVG barres empilées Semaine/Mois
@@ -144,7 +150,9 @@ Le singleton `syncEngine` ([src/lib/sync.ts](file:///home/quent/Work/Perso/Paysa
 > **Point d'attention architectural** : contrairement aux `pointages`, les mutations de chantiers et d'affectations passent désormais par [src/lib/chantiersService.ts](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/lib/chantiersService.ts) : avec une session Supabase active, l'appel distant est vérifié en premier et remonte explicitement toute erreur RLS/réseau vers la bannière UI existante avant de mettre à jour Dexie (sans file d'attente offline dédiée pour les chantiers). En mode démo locale (sans session JWT), la mutation s'applique localement dans Dexie.
 
 ### Gestion d'état : Context, `localStorage`, Hooks & Props
-- **Contexte global (`AuthContext`)** ([src/context/AuthContext.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/context/AuthContext.tsx)) : expose `profile`, `role`, `loading`, `isOnline`, `isDemo`, `login`, `loginDemo`, `logout`. Au démarrage, il restaure immédiatement le profil depuis `localStorage` + `db.profiles.get(...)`, puis vérifie la session Supabase si en ligne.
+- **Contexte Auth (`AuthContext`)** ([src/context/AuthContext.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/context/AuthContext.tsx)) : expose `profile`, `role`, `loading`, `isOnline`, `isDemo`, `login`, `loginDemo`, `logout`. Au démarrage, il restaure immédiatement le profil depuis `localStorage` + `db.profiles.get(...)`, puis vérifie la session Supabase si en ligne.
+- **Contexte Thème (`ThemeProvider` & `useTheme`)** ([src/context/ThemeContext.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/context/ThemeContext.tsx), [src/context/useTheme.ts](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/context/useTheme.ts), [src/lib/theme.ts](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/lib/theme.ts)) : expose `{ theme, resolvedTheme, setTheme }`, écoute `prefers-color-scheme: dark` en temps réel lorsque `theme === 'system'` et les événements `storage` inter-onglets, et synchronise `.dark` sur `<html>`, `color-scheme`, le fond racine et `<meta name="theme-color">` (`#15302F` en clair, `#0F1D1C` en sombre).
+- **Initialisation synchrone anti-FOUC ([index.html](file:///home/quent/Work/Perso/Paysage-Concept-MVP/index.html))** : un script inline minimal dans `<head>` lit `paysage_theme_preference` avant le montage React, résout `'system' | 'light' | 'dark'` via `matchMedia` et applique immédiatement `.dark`, `color-scheme`, `backgroundColor` et `meta[name="theme-color"]` afin d'éviter tout flash clair au lancement de la PWA.
 - **Hooks de domaine (`src/hooks/`)** : chaque page principale délègue son état React et sa réactivité Dexie/`syncEngine` à un hook dédié (`useHomeDashboard`, `usePlanningData`, `useChantiersCatalog`, `useChantierDetail`, `usePlusDiagnostics`).
 - **Bus d'événements `syncEngine.subscribe`** : mécanisme pub/sub maison (`listeners: Array<() => void>`) utilisé par les hooks de pages et `NetworkBanner` pour recharger leurs états locaux après une écriture ou une synchronisation.
 - **Persistance `localStorage`** :
@@ -152,7 +160,8 @@ Le singleton `syncEngine` ([src/lib/sync.ts](file:///home/quent/Work/Perso/Paysa
   - `paysage_is_demo` : `'true'` si session en mode démo locale sans JWT Supabase.
   - `paysage_daily_target[_<profileId>]` : objectif journalier en heures (défaut `7.0`, borné `[1, 24]`).
   - `paysage_last_time_range[_<profileId>]` : JSON `{ heureDebut, heureFin }` des derniers horaires validés.
-- **Props vs Context** : les composants réutilisables (`CircularProgressGauge`, `WeeklyCalendarStrip`, `HoursAnalyticsSection`, `ChatRoomView`, `DateSelectorPill`, `src/components/{home,planning,chantiers,analytics,auth}/*`) sont purement pilotés par props et callbacks ; seuls `AppLayout`, `NetworkBanner`, `Equipe`, `Login` et les hooks consomment `useAuth()`.
+  - `paysage_theme_preference` : préférence d'affichage (`'system'` par défaut, `'light'`, `'dark'`).
+- **Props vs Context** : les composants réutilisables (`WeeklyCalendarStrip`, `HoursAnalyticsSection`, `ChatRoomView`, `DateSelectorPill`, `src/components/{home,planning,chantiers,analytics,auth}/*`) sont purement pilotés par props et callbacks ; seuls `AppLayout`, `NetworkBanner`, `Equipe`, `Login`, `ThemeSelector`, `CircularProgressGauge`, `HoursBarChartSVG` et les hooks consomment `useAuth()` / `useTheme()`.
 
 ### Routage, Code-Splitting & Contrôle d'accès ([src/App.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/App.tsx))
 - **Code-splitting par route** : `Login`, `Planning`, `Chantiers`, `ChantierDetail`, `Equipe`, `ChatPreview` et `Plus` sont chargés en `React.lazy` avec un `<Suspense fallback={<RouteLoadingFallback />}>` ; seul `Home` reste importé de manière synchrone (eager) pour garantir un rendu instantané de l'écran d'accueil.

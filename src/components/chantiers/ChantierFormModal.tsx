@@ -21,20 +21,20 @@ export const ChantierFormModal: React.FC<ChantierFormModalProps> = ({
   const isCreate = mode === 'create';
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-300">
-        <div className="flex items-center justify-between border-b border-sable pb-3">
+    <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-[#172322] w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl border-t sm:border border-transparent dark:border-[#2A3F3C] animate-in slide-in-from-bottom duration-300">
+        <div className="flex items-center justify-between border-b border-sable dark:border-[#2A3F3C] pb-3">
           <div className="flex items-center gap-2.5">
             {isCreate ? (
               <div className="w-10 h-10 rounded-2xl bg-terracotta text-white flex items-center justify-center shadow-xs">
                 <Plus className="w-5 h-5" />
               </div>
             ) : (
-              <div className="w-10 h-10 rounded-2xl bg-foret text-sable flex items-center justify-center shadow-xs">
-                <Edit3 className="w-5 h-5 text-terracotta" />
+              <div className="w-10 h-10 rounded-2xl bg-foret dark:bg-[#235852] text-sable dark:text-[#D5E6DC] flex items-center justify-center shadow-xs">
+                <Edit3 className="w-5 h-5 text-terracotta dark:text-[#E38D69]" />
               </div>
             )}
-            <h2 className="text-base font-extrabold text-foret">
+            <h2 className="text-base font-extrabold text-foret dark:text-[#EDF2F0]">
               {isCreate ? 'Créer un nouveau chantier' : 'Modifier le chantier'}
             </h2>
           </div>
@@ -42,7 +42,7 @@ export const ChantierFormModal: React.FC<ChantierFormModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Fermer la fenêtre"
-            className="min-w-[48px] min-h-[48px] w-12 h-12 flex items-center justify-center hover:bg-craie rounded-2xl text-foret/60 hover:text-foret cursor-pointer"
+            className="min-w-[48px] min-h-[48px] w-12 h-12 flex items-center justify-center hover:bg-craie dark:hover:bg-[#263A37] rounded-2xl text-foret/60 hover:text-foret dark:text-[#B8C7C2] dark:hover:text-[#EDF2F0] cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -50,7 +50,7 @@ export const ChantierFormModal: React.FC<ChantierFormModalProps> = ({
 
         <form onSubmit={onSubmit} className="space-y-4 text-xs">
           <div>
-            <label className="block font-bold text-foret mb-1.5">
+            <label className="block font-bold text-foret dark:text-[#EDF2F0] mb-1.5">
               {isCreate ? 'Nom du client / Intitulé du projet *' : 'Nom du client / Chantier *'}
             </label>
             <input
@@ -59,12 +59,12 @@ export const ChantierFormModal: React.FC<ChantierFormModalProps> = ({
               placeholder={isCreate ? 'ex: Villa Dupont - Terrasse & Gazon' : undefined}
               value={form.nom_client}
               onChange={(e) => onChange({ ...form, nom_client: e.target.value })}
-              className="w-full min-h-[48px] bg-craie px-3.5 py-2.5 rounded-2xl border border-sable text-foret focus:outline-none focus:ring-2 focus:ring-foret/20"
+              className="w-full min-h-[48px] bg-craie dark:bg-[#1E2E2C] px-3.5 py-2.5 rounded-2xl border border-sable dark:border-[#304744] text-foret dark:text-[#EDF2F0] dark:placeholder:text-[#8FA5A0] focus:outline-none focus:ring-2 focus:ring-foret/20 dark:focus:ring-sauge/40"
             />
           </div>
 
           <div>
-            <label className="block font-bold text-foret mb-1.5">
+            <label className="block font-bold text-foret dark:text-[#EDF2F0] mb-1.5">
               {isCreate ? 'Adresse complète du chantier *' : 'Adresse complète *'}
             </label>
             <input
@@ -73,18 +73,18 @@ export const ChantierFormModal: React.FC<ChantierFormModalProps> = ({
               placeholder={isCreate ? 'ex: 12 Rue des Lilas, 69000 Lyon' : undefined}
               value={form.adresse}
               onChange={(e) => onChange({ ...form, adresse: e.target.value })}
-              className="w-full min-h-[48px] bg-craie px-3.5 py-2.5 rounded-2xl border border-sable text-foret focus:outline-none focus:ring-2 focus:ring-foret/20"
+              className="w-full min-h-[48px] bg-craie dark:bg-[#1E2E2C] px-3.5 py-2.5 rounded-2xl border border-sable dark:border-[#304744] text-foret dark:text-[#EDF2F0] dark:placeholder:text-[#8FA5A0] focus:outline-none focus:ring-2 focus:ring-foret/20 dark:focus:ring-sauge/40"
             />
           </div>
 
           <div>
-            <label className="block font-bold text-foret mb-1.5">
+            <label className="block font-bold text-foret dark:text-[#EDF2F0] mb-1.5">
               {isCreate ? 'Statut initial' : 'Statut du chantier'}
             </label>
             <select
               value={form.statut}
               onChange={(e) => onChange({ ...form, statut: e.target.value as ChantierStatut })}
-              className="w-full min-h-[48px] bg-craie px-3.5 py-2.5 rounded-2xl border border-sable text-foret focus:outline-none focus:ring-2 focus:ring-foret/20 font-bold"
+              className="w-full min-h-[48px] bg-craie dark:bg-[#1E2E2C] px-3.5 py-2.5 rounded-2xl border border-sable dark:border-[#304744] text-foret dark:text-[#EDF2F0] focus:outline-none focus:ring-2 focus:ring-foret/20 dark:focus:ring-sauge/40 font-bold"
             >
               <option value="en_cours">🟢 En cours</option>
               <option value="en_attente">🟡 En attente</option>
@@ -94,29 +94,29 @@ export const ChantierFormModal: React.FC<ChantierFormModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-bold text-foret mb-1.5">Date de début</label>
+              <label className="block font-bold text-foret dark:text-[#EDF2F0] mb-1.5">Date de début</label>
               <input
                 type="date"
                 value={form.date_debut || ''}
                 onChange={(e) => onChange({ ...form, date_debut: e.target.value })}
-                className="w-full min-h-[48px] bg-craie px-3 py-2 rounded-2xl border border-sable text-foret focus:outline-none focus:ring-2 focus:ring-foret/20 font-semibold"
+                className="w-full min-h-[48px] bg-craie dark:bg-[#1E2E2C] px-3 py-2 rounded-2xl border border-sable dark:border-[#304744] text-foret dark:text-[#EDF2F0] focus:outline-none focus:ring-2 focus:ring-foret/20 dark:focus:ring-sauge/40 font-semibold"
               />
             </div>
             <div>
-              <label className="block font-bold text-foret mb-1.5">
+              <label className="block font-bold text-foret dark:text-[#EDF2F0] mb-1.5">
                 {isCreate ? 'Date de fin prévisionnelle' : 'Date de fin'}
               </label>
               <input
                 type="date"
                 value={form.date_fin || ''}
                 onChange={(e) => onChange({ ...form, date_fin: e.target.value })}
-                className="w-full min-h-[48px] bg-craie px-3 py-2 rounded-2xl border border-sable text-foret focus:outline-none focus:ring-2 focus:ring-foret/20 font-semibold"
+                className="w-full min-h-[48px] bg-craie dark:bg-[#1E2E2C] px-3 py-2 rounded-2xl border border-sable dark:border-[#304744] text-foret dark:text-[#EDF2F0] focus:outline-none focus:ring-2 focus:ring-foret/20 dark:focus:ring-sauge/40 font-semibold"
               />
             </div>
           </div>
 
           <div>
-            <label className="block font-bold text-foret mb-1.5">
+            <label className="block font-bold text-foret dark:text-[#EDF2F0] mb-1.5">
               {isCreate ? 'Description des travaux & consignes' : 'Description des travaux'}
             </label>
             <textarea
@@ -128,7 +128,7 @@ export const ChantierFormModal: React.FC<ChantierFormModalProps> = ({
               }
               value={form.description || ''}
               onChange={(e) => onChange({ ...form, description: e.target.value })}
-              className="w-full bg-craie p-3 rounded-2xl border border-sable text-foret focus:outline-none focus:ring-2 focus:ring-foret/20"
+              className="w-full bg-craie dark:bg-[#1E2E2C] p-3 rounded-2xl border border-sable dark:border-[#304744] text-foret dark:text-[#EDF2F0] dark:placeholder:text-[#8FA5A0] focus:outline-none focus:ring-2 focus:ring-foret/20 dark:focus:ring-sauge/40"
             />
           </div>
 
@@ -136,14 +136,14 @@ export const ChantierFormModal: React.FC<ChantierFormModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="min-h-[48px] px-5 py-3 rounded-2xl bg-craie hover:bg-sable/50 text-foret font-bold transition-all cursor-pointer"
+              className="min-h-[48px] px-5 py-3 rounded-2xl bg-craie hover:bg-sable/50 text-foret font-bold transition-all cursor-pointer dark:bg-[#1E2E2C] dark:hover:bg-[#263A37] dark:text-[#EDF2F0] dark:border dark:border-[#304744]"
             >
               Annuler
             </button>
             <button
               type="submit"
-              className={`min-h-[48px] px-6 py-3 rounded-2xl bg-foret hover:bg-foret/90 text-white font-bold transition-all cursor-pointer ${
-                isCreate ? 'shadow-md shadow-foret/25' : 'shadow-md'
+              className={`min-h-[48px] px-6 py-3 rounded-2xl bg-foret hover:bg-foret/90 dark:bg-[#235852] dark:hover:bg-[#2B6962] text-white font-bold transition-all cursor-pointer ${
+                isCreate ? 'shadow-md shadow-foret/25 dark:shadow-none' : 'shadow-md dark:shadow-none'
               }`}
             >
               {isCreate ? 'Créer le chantier' : 'Enregistrer les modifications'}
