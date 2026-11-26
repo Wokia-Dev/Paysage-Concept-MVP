@@ -1,5 +1,12 @@
 import React, { useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import {
+  formatFrenchMonthYear,
+  formatISODate,
+  getTodayDateString,
+  getWeekMonday,
+  parseMiddayUTC,
+} from '../../lib/dates';
 
 interface WeeklyCalendarStripProps {
   selectedDate: string; // YYYY-MM-DD
@@ -12,33 +19,12 @@ export const WeeklyCalendarStrip: React.FC<WeeklyCalendarStripProps> = ({
   onSelectDate,
   className = '',
 }) => {
-  // Parse safely with midday UTC anchor
-  const parseMiddayUTC = (dateStr: string): Date => {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    return new Date(Date.UTC(y, (m || 1) - 1, d || 1, 12, 0, 0));
-  };
-
-  const formatISODate = (d: Date): string => {
-    return d.toISOString().slice(0, 10);
-  };
-
   const selectedDateObj = useMemo(() => parseMiddayUTC(selectedDate), [selectedDate]);
-
-  // Today string in UTC
-  const todayStr = useMemo(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
-      now.getDate()
-    ).padStart(2, '0')}`;
-  }, []);
+  const todayStr = useMemo(() => getTodayDateString(0), []);
 
   // Compute Monday of the week containing selectedDate
   const weekDays = useMemo(() => {
-    const d = new Date(selectedDateObj);
-    const day = d.getUTCDay(); // 0 is Sunday, 1 is Monday...
-    const diff = day === 0 ? -6 : 1 - day;
-    const monday = new Date(d);
-    monday.setUTCDate(d.getUTCDate() + diff);
+    const monday = getWeekMonday(selectedDateObj);
 
     return Array.from({ length: 7 }, (_, i) => {
       const current = new Date(monday);
@@ -85,14 +71,10 @@ export const WeeklyCalendarStrip: React.FC<WeeklyCalendarStripProps> = ({
   };
 
   // Month and Year label in French (e.g. "Octobre 2026")
-  const monthYearLabel = useMemo(() => {
-    const label = new Intl.DateTimeFormat('fr-FR', {
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'UTC',
-    }).format(selectedDateObj);
-    return label.charAt(0).toUpperCase() + label.slice(1);
-  }, [selectedDateObj]);
+  const monthYearLabel = useMemo(
+    () => formatFrenchMonthYear(selectedDateObj, 'UTC'),
+    [selectedDateObj]
+  );
 
   const isCurrentWeekToday = weekDays.some((w) => w.isToday && w.isSelected);
 

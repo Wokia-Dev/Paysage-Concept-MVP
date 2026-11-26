@@ -4,6 +4,7 @@ import { BottomNav } from './BottomNav';
 import { NetworkBanner } from '../common/NetworkBanner';
 import { useAuth } from '../../context/useAuth';
 import { LogoOutline } from '../common/LogoOutline';
+import { getInitials, getRoleLabel } from '../../lib/formatters';
 
 export function AppLayout() {
   const { profile } = useAuth();
@@ -117,22 +118,6 @@ export function AppLayout() {
     touchStartY.current = null;
   };
 
-  const getRoleLabel = (role?: string) => {
-    switch (role) {
-      case 'chef_equipe':
-        return 'Chef';
-      case 'admin':
-        return 'Admin';
-      default:
-        return 'Ouvrier';
-    }
-  };
-
-  const getInitials = () => {
-    if (!profile) return 'PC';
-    return `${profile.prenom.charAt(0)}${profile.nom.charAt(0)}`.toUpperCase();
-  };
-
   return (
     <div
       className="min-h-screen h-screen h-[100dvh] bg-craie flex flex-col items-center justify-start text-foret font-sans antialiased overflow-hidden"
@@ -158,7 +143,7 @@ export function AppLayout() {
                   PAYSAGE CONCEPT
                 </span>
                 <span className="text-[10px] font-medium text-sauge tracking-wider uppercase">
-                  {getRoleLabel(profile?.role)} • {profile?.prenom || 'Équipe'}
+                  {getRoleLabel(profile?.role, 'short')} • {profile?.prenom || 'Équipe'}
                 </span>
               </div>
             </div>
@@ -169,7 +154,7 @@ export function AppLayout() {
                 className="w-8 h-8 rounded-full bg-sable/20 text-sable font-bold text-xs flex items-center justify-center border border-sauge/40 shadow-xs"
                 title={`${profile?.prenom || ''} ${profile?.nom || ''}`}
               >
-                {getInitials()}
+                {getInitials(profile?.prenom, profile?.nom)}
               </div>
             </div>
           </header>

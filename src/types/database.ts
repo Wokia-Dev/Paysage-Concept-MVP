@@ -2,8 +2,6 @@ export type UserRole = 'admin' | 'chef_equipe' | 'ouvrier';
 
 export type ChantierStatut = 'en_attente' | 'en_cours' | 'termine';
 
-export type ConversationType = 'general' | 'chantier' | 'direction';
-
 export interface Profile {
   id: string;
   nom: string;

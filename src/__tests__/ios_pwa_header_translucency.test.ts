@@ -13,7 +13,7 @@ describe('iOS Standalone PWA Status Bar & Safe Area Integration', () => {
   const indexHtmlPath = resolve(projectRoot, 'index.html');
   const indexCssPath = resolve(projectRoot, 'src/index.css');
   const viteConfigPath = resolve(projectRoot, 'vite.config.ts');
-  const homePath = resolve(projectRoot, 'src/pages/Home.tsx');
+  const homePath = resolve(projectRoot, 'src/components/home/HomeHeader.tsx');
   const appLayoutPath = resolve(projectRoot, 'src/components/layout/AppLayout.tsx');
 
   const indexHtml = readFileSync(indexHtmlPath, 'utf-8');

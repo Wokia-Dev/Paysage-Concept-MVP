@@ -1,120 +1,28 @@
-import { useEffect, useState } from 'react';
-import { useAuth } from '../context/useAuth';
-import { db, reseedDatabase } from '../lib/db';
-import { syncEngine } from '../lib/sync';
-import logoUrl from '../assets/logo.png';
-import {
-  ShieldCheck,
-  Database,
-  RefreshCw,
-  Trash2,
-  Smartphone,
-  LogOut,
-  CheckCircle2,
-  Sliders,
-  AlertCircle,
-  Info,
-  Briefcase,
-  ChevronRight,
-} from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+import {
+  AlertCircle,
+  Briefcase,
+  CheckCircle2,
+  ChevronRight,
+  Database,
+  Info,
+  LogOut,
+  RefreshCw,
+  ShieldCheck,
+  Sliders,
+  Smartphone,
+  Trash2,
+} from 'lucide-react';
+import { useAuth } from '../context/useAuth';
+import { usePlusDiagnostics } from '../hooks/usePlusDiagnostics';
+import { getRoleLabel } from '../lib/formatters';
+import logoUrl from '../assets/logo.png';
 
 export function Plus() {
   const { profile, logout, isOnline, isDemo } = useAuth();
   const navigate = useNavigate();
-
-  const [dbStats, setDbStats] = useState({
-    pointagesCount: 0,
-    unsyncedCount: 0,
-    chantiersCount: 0,
-    profilesCount: 0,
-  });
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-
-  const loadStats = async () => {
-    try {
-      const [ptCount, unsynced, chCount, prCount] = await Promise.all([
-        db.pointages.count(),
-        db.pointages.filter((pt) => !pt.synced).count(),
-        db.chantiers.count(),
-        db.profiles.count(),
-      ]);
-      setDbStats({
-        pointagesCount: ptCount,
-        unsyncedCount: unsynced,
-        chantiersCount: chCount,
-        profilesCount: prCount,
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    let isMounted = true;
-    const fetchStats = async () => {
-      try {
-        const [ptCount, unsynced, chCount, prCount] = await Promise.all([
-          db.pointages.count(),
-          db.pointages.filter((pt) => !pt.synced).count(),
-          db.chantiers.count(),
-          db.profiles.count(),
-        ]);
-        if (isMounted) {
-          setDbStats({
-            pointagesCount: ptCount,
-            unsyncedCount: unsynced,
-            chantiersCount: chCount,
-            profilesCount: prCount,
-          });
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchStats();
-    const unsub = syncEngine.subscribe(fetchStats);
-    return () => {
-      isMounted = false;
-      unsub();
-    };
-  }, []);
-
-  const handleSyncNow = async () => {
-    if (!isOnline) {
-      setMessage('Impossible : vous êtes actuellement hors-ligne.');
-      return;
-    }
-
-    setIsSyncing(true);
-    setMessage(null);
-    const res = await syncEngine.triggerSync();
-    await loadStats();
-    setIsSyncing(false);
-
-    if (res.requiresRealAuth) {
-      setMessage(`ℹ️ ${res.lastError}`);
-    } else if (res.failed > 0) {
-      setMessage(`⚠️ Échec sur ${res.failed} pointage(s) : ${res.lastError}`);
-    } else if (res.success > 0) {
-      setMessage(`✅ Succès : ${res.success} pointage(s) enregistré(s) dans Supabase !`);
-    } else {
-      setMessage('Tous les pointages sont déjà synchronisés dans Supabase.');
-    }
-  };
-
-  const handleResetDemoData = async () => {
-    if (confirm('Réinitialiser le cache local et recharger les données fraîches ?')) {
-      await reseedDatabase();
-      if (isOnline) {
-        await syncEngine.pullRemoteChantiers();
-      }
-      await loadStats();
-      setMessage('Cache IndexedDB réinitialisé et synchronisé avec succès.');
-    }
-  };
+  const { dbStats, isSyncing, message, handleSyncNow, handleResetDemoData } =
+    usePlusDiagnostics(isOnline);
 
   const handleLogout = async () => {
     await logout();
@@ -160,13 +68,7 @@ export function Plus() {
             </div>
             <p className="text-xs text-sauge capitalize font-semibold flex items-center gap-1.5 mt-0.5">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>
-                {profile?.role === 'chef_equipe'
-                  ? "Chef d'équipe"
-                  : profile?.role === 'admin'
-                    ? 'Administrateur / Conducteur'
-                    : 'Ouvrier paysagiste'}
-              </span>
+              <span>{getRoleLabel(profile?.role, 'admin')}</span>
             </p>
           </div>
         </div>
@@ -235,7 +137,9 @@ export function Plus() {
               </div>
               <div className="text-left">
                 <span className="block text-white font-bold">Catalogue des chantiers</span>
-                <span className="block text-[10px] text-sauge font-medium">Gestion globale & affectations</span>
+                <span className="block text-[10px] text-sauge font-medium">
+                  Gestion globale & affectations
+                </span>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-sauge" />
@@ -261,7 +165,6 @@ export function Plus() {
           </span>
         </div>
 
-        {/* Compteurs de la base locale */}
         <div className="grid grid-cols-2 gap-2.5 text-xs">
           <div className="bg-craie p-3 rounded-2xl border border-sable/60">
             <span className="text-[11px] text-foret/70 block font-medium">Pointages en cache</span>
@@ -269,7 +172,9 @@ export function Plus() {
           </div>
 
           <div className="bg-craie p-3 rounded-2xl border border-sable/60">
-            <span className="text-[11px] text-foret/70 block font-medium">En attente de synchro</span>
+            <span className="text-[11px] text-foret/70 block font-medium">
+              En attente de synchro
+            </span>
             <span
               className={`text-base font-extrabold ${
                 dbStats.unsyncedCount > 0 ? 'text-amber-700' : 'text-emerald-700'
@@ -290,7 +195,6 @@ export function Plus() {
           </div>
         </div>
 
-        {/* Boutons d'actions offline avec min-h-[48px] touch targets */}
         <div className="space-y-2.5 pt-1">
           <button
             type="button"
@@ -346,7 +250,7 @@ export function Plus() {
         </div>
       </div>
 
-      {/* 7. Déconnexion avec min-h-[48px] touch target */}
+      {/* 7. Déconnexion */}
       <button
         type="button"
         onClick={handleLogout}

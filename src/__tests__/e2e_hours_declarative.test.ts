@@ -1,9 +1,7 @@
 /// <reference types="node" />
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readHomeBundle } from './helpers/sourceReader.ts';
 
 import {
   formatHours,
@@ -27,12 +25,8 @@ import {
 } from '../lib/hours.ts';
 import type { PointageLocal, Profile } from '../types/database.ts';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = resolve(__dirname, '../..');
-
 describe('E2E Declarative Hours Tracking (R4 & R3)', () => {
-  const homeContent = readFileSync(resolve(projectRoot, 'src/pages/Home.tsx'), 'utf-8');
+  const homeContent = readHomeBundle();
 
   describe('Tier 1: Feature Coverage — Declarative Time-Tracking Form & Engine', () => {
     it('verifies standard daily target defaults to 7.0 hours (35h week)', () => {

@@ -4,17 +4,17 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readHomeBundle } from './helpers/sourceReader.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = resolve(__dirname, '../..');
 
 describe('Milestone 2: Home Dashboard & Declarative Time-Tracking (R3 & R4)', () => {
-  const homePath = resolve(projectRoot, 'src/pages/Home.tsx');
   const gaugePath = resolve(projectRoot, 'src/components/common/CircularProgressGauge.tsx');
   const datePillPath = resolve(projectRoot, 'src/components/common/DateSelectorPill.tsx');
 
-  const homeContent = readFileSync(homePath, 'utf-8');
+  const homeContent = readHomeBundle();
   const gaugeContent = readFileSync(gaugePath, 'utf-8');
   const datePillContent = readFileSync(datePillPath, 'utf-8');
 
@@ -100,7 +100,7 @@ describe('Milestone 2: Home Dashboard & Declarative Time-Tracking (R3 & R4)', ()
 
     it('renders user avatar initials and removes notification bell with Terracotta badge', () => {
       assert.doesNotMatch(homeContent, /<Bell/);
-      assert.match(homeContent, /userInitials/);
+      assert.match(homeContent, /userInitials|getInitials/);
     });
 
     it('verifies redundant quick glance horizontal pills are removed in favor of weekly strip and hero card', () => {

@@ -1,20 +1,11 @@
 /// <reference types="node" />
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = resolve(__dirname, '../..');
+import { readChantierDetailBundle, readPlanningBundle } from './helpers/sourceReader.ts';
 
 describe('Milestone 3 Empirical Adversarial Stress Harness (Challenger 2)', () => {
-  const planningPath = resolve(projectRoot, 'src/pages/Planning.tsx');
-  const chantierDetailPath = resolve(projectRoot, 'src/pages/ChantierDetail.tsx');
-
-  const planningContent = readFileSync(planningPath, 'utf-8');
-  const chantierDetailContent = readFileSync(chantierDetailPath, 'utf-8');
+  const planningContent = readPlanningBundle();
+  const chantierDetailContent = readChantierDetailBundle();
 
   // =========================================================================
   // Challenge 1: Deferred Media Constraint Rigorous Audit
@@ -168,14 +159,19 @@ describe('Milestone 3 Empirical Adversarial Stress Harness (Challenger 2)', () =
       // Must guard supervisor panel
       assert.match(
         chantierDetailContent,
-        /\{isSupervisor\s*&&\s*\(\s*<div[^>]*>[\s\S]*?Pilotage Superviseur/,
-        'ChantierDetail must enclose Pilotage Superviseur inside isSupervisor conditional'
+        /detail\.isSupervisor\s*&&\s*\(\s*<ChantierSupervisorPanel/,
+        'ChantierDetail must enclose ChantierSupervisorPanel inside isSupervisor conditional'
+      );
+      assert.match(
+        chantierDetailContent,
+        /Pilotage Superviseur/,
+        'Supervisor panel must render Pilotage Superviseur'
       );
 
       // Must guard supervisor header badge
       assert.match(
         chantierDetailContent,
-        /\{isSupervisor\s*&&\s*\(\s*<span[^>]*>[\s\S]*?Superviseur/,
+        /detail\.isSupervisor\s*&&\s*\(\s*<span[^>]*>[\s\S]*?Superviseur/,
         'ChantierDetail must enclose Superviseur badge inside isSupervisor conditional'
       );
     });
@@ -266,7 +262,7 @@ describe('Milestone 3 Empirical Adversarial Stress Harness (Challenger 2)', () =
     });
 
     it('verifies Planning enforces strict personal filtering for ouvrier role', () => {
-      // In Planning.tsx: targetFilterProfileId strictly checks profile.role === 'ouvrier'
+      // In usePlanningData.ts: targetFilterProfileId strictly checks profile.role === 'ouvrier'
       assert.match(
         planningContent,
         /if\s*\(\s*profile\.role\s*===\s*['"]ouvrier['"]\s*\)\s*return\s+profile\.id\s*;/,
@@ -276,7 +272,12 @@ describe('Milestone 3 Empirical Adversarial Stress Harness (Challenger 2)', () =
       // Ouvrier cannot access supervisor dropdown
       assert.match(
         planningContent,
-        /\{\s*\(\s*profile\?\.role\s*===\s*['"]chef_equipe['"]\s*\|\|\s*profile\?\.role\s*===\s*['"]admin['"]\s*\)\s*&&\s*\(/,
+        /isSupervisor\s*=\s*profile\?\.role\s*===\s*['"]chef_equipe['"]\s*\|\|\s*profile\?\.role\s*===\s*['"]admin['"]/,
+        'Planning must compute isSupervisor strictly'
+      );
+      assert.match(
+        planningContent,
+        /\{isSupervisor\s*&&\s*profile\s*&&\s*\(/,
         'Planning must strictly hide supervisor filter dropdown from ouvrier'
       );
     });
@@ -318,14 +319,14 @@ describe('Milestone 3 Empirical Adversarial Stress Harness (Challenger 2)', () =
       // Top floating GPS button
       assert.match(
         chantierDetailContent,
-        /href=\{`https:\/\/maps\.google\.com\/\?q=\$\{encodeURIComponent\(chantier\.adresse\)\}`\}[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]\s+rounded-full/,
+        /href=\{getMapsUrl\(chantier\.adresse\)\}[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]\s+rounded-full/,
         'Top floating circular GPS button must enforce 48x48px and rounded-full'
       );
 
       // Hero full-width GPS launcher button
       assert.match(
         chantierDetailContent,
-        /href=\{`https:\/\/maps\.google\.com\/\?q=\$\{encodeURIComponent\(chantier\.adresse\)\}`\}[\s\S]*?min-h-\[48px\][\s\S]*?Lancer la navigation GPS/,
+        /href=\{getMapsUrl\(chantier\.adresse\)\}[\s\S]*?min-h-\[48px\][\s\S]*?Lancer la navigation GPS/,
         'Hero GPS launcher button must enforce min-h-[48px]'
       );
     });
@@ -333,7 +334,7 @@ describe('Milestone 3 Empirical Adversarial Stress Harness (Challenger 2)', () =
     it('verifies Planning day schedule mission card includes encoded GPS navigation link (>= 48px)', () => {
       assert.match(
         planningContent,
-        /href=\{`https:\/\/maps\.google\.com\/\?q=\$\{encodeURIComponent\(chantier\.adresse\)\}`\}[\s\S]*?min-h-\[48px\]/,
+        /href=\{getMapsUrl\(chantier\.adresse\)\}[\s\S]*?min-h-\[48px\]/,
         'Planning day mission card must provide min-h-[48px] encoded GPS link'
       );
     });
@@ -362,8 +363,8 @@ describe('Milestone 3 Empirical Adversarial Stress Harness (Challenger 2)', () =
       );
       assert.match(
         chantierDetailContent,
-        /<a[\s\S]*?href=\{`sms:\$\{member\.telephone[\s\S]*?min-h-\[48px\]/,
-        'Team member message button must point to sms:${member.telephone} and enforce min-h-[48px]'
+        /<a[\s\S]*?href=\{`sms:\$\{sanitizePhoneHref\(member\.telephone\)[\s\S]*?min-h-\[48px\]/,
+        'Team member message button must point to sanitized sms href and enforce min-h-[48px]'
       );
       assert.match(
         chantierDetailContent,

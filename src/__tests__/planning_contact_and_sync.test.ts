@@ -3,14 +3,26 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readChantierDetailBundle, readPlanningBundle } from './helpers/sourceReader.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = resolve(__dirname, '../..');
 
 describe('Planning Contact, Week Sync & Simplification Improvements', () => {
-  const planningPath = resolve(projectRoot, 'src/pages/Planning.tsx');
-  const planningContent = readFileSync(planningPath, 'utf-8');
+  const planningContent = readPlanningBundle();
+  const planningDayContent = readFileSync(
+    resolve(projectRoot, 'src/components/planning/PlanningDayView.tsx'),
+    'utf-8'
+  );
+  const planningWeekContent = readFileSync(
+    resolve(projectRoot, 'src/components/planning/PlanningWeekView.tsx'),
+    'utf-8'
+  );
+  const planningMonthContent = readFileSync(
+    resolve(projectRoot, 'src/components/planning/PlanningMonthView.tsx'),
+    'utf-8'
+  );
 
   // =========================================================================
   // Requirement 1: Team Presence Card Removal
@@ -41,24 +53,24 @@ describe('Planning Contact, Week Sync & Simplification Improvements', () => {
   describe('Requirement 2: Dedicated "Aujourd\'hui" Button', () => {
     it('renders a thumb-friendly "Aujourd\'hui" button next to navigation controls in Day view', () => {
       assert.match(
-        planningContent,
-        /viewMode\s*===\s*['"]day['"][\s\S]*?>\s*Aujourd'hui\s*<\/button>/,
+        planningDayContent,
+        />\s*Aujourd'hui\s*<\/button>/,
         'Day view must render "Aujourd\'hui" button'
       );
     });
 
     it('renders "Aujourd\'hui" button in Week view', () => {
       assert.match(
-        planningContent,
-        /viewMode\s*===\s*['"]week['"][\s\S]*?>\s*Aujourd'hui\s*<\/button>/,
+        planningWeekContent,
+        />\s*Aujourd'hui\s*<\/button>/,
         'Week view must render "Aujourd\'hui" button'
       );
     });
 
     it('renders "Aujourd\'hui" button in Month view', () => {
       assert.match(
-        planningContent,
-        /viewMode\s*===\s*['"]month['"][\s\S]*?>\s*Aujourd'hui\s*<\/button>/,
+        planningMonthContent,
+        />\s*Aujourd'hui\s*<\/button>/,
         'Month view must render "Aujourd\'hui" button'
       );
     });
@@ -102,12 +114,12 @@ describe('Planning Contact, Week Sync & Simplification Improvements', () => {
       );
       assert.match(
         planningContent,
-        /currentWeekMonday\s*=\s*useMemo\(\(\)\s*=>\s*\{[\s\S]*?new Date\(weekAnchorDateObj\)/,
+        /currentWeekMonday\s*=\s*useMemo\(\s*\(\)\s*=>\s*getWeekMonday\(weekAnchorDateObj\)/,
         'currentWeekMonday must be derived from weekAnchorDateObj'
       );
       assert.match(
         planningContent,
-        /weekDays:\s*DayItem\[\]\s*=\s*useMemo\(\(\)\s*=>\s*\{[\s\S]*?currentWeekMonday/,
+        /weekDays:\s*DayItem\[\]\s*=\s*useMemo\(\s*\(\)\s*=>\s*generateWeekDays\(currentWeekMonday\)/,
         'weekDays must be generated from currentWeekMonday'
       );
     });
@@ -138,7 +150,7 @@ describe('Planning Contact, Week Sync & Simplification Improvements', () => {
     it('verifies explicit date selection updates both selectedDate and weekAnchorDate', () => {
       assert.match(
         planningContent,
-        /const\s+handleSelectDate\s*=\s*useCallback\(\(dateStr:\s*string\)\s*=>\s*\{[\s\S]*?setSelectedDate\(dateStr\);[\s\S]*?setWeekAnchorDate\(dateStr\);/,
+        /const\s+handleSelectDate\s*=\s*useCallback\(\s*\(dateStr:\s*string\)\s*=>\s*\{[\s\S]*?setSelectedDate\(dateStr\);[\s\S]*?setWeekAnchorDate\(dateStr\);/,
         'handleSelectDate must update both selectedDate and weekAnchorDate'
       );
     });
@@ -178,16 +190,20 @@ describe('Planning Contact, Week Sync & Simplification Improvements', () => {
   describe('Requirement 4: Quick Contact Modal for Team Members', () => {
     it('renders clickable buttons for each teammate in "ÉQUIPE SUR PLACE"', () => {
       assert.match(
-        planningContent,
-        /<button[\s\S]*?onClick=\{\(\)\s*=>\s*setContactMember\(m\)\}[\s\S]*?Contacter/s,
-        'Teammate badges in chantier cards must be clickable buttons triggering setContactMember'
+        planningDayContent,
+        /<button[\s\S]*?onClick=\{\(\)\s*=>\s*onContactMember\(m\)\}[\s\S]*?Contacter/s,
+        'Teammate badges in chantier cards must be clickable buttons triggering onContactMember'
       );
     });
 
     it('declares contact modal with role="dialog" and backdrop dismissal', () => {
+      const contactModalContent = readFileSync(
+        resolve(projectRoot, 'src/components/planning/MemberContactModal.tsx'),
+        'utf-8'
+      );
       assert.match(
-        planningContent,
-        /contactMember\s*&&[\s\S]*?role="dialog"[\s\S]*?onClick=\{\(\)\s*=>\s*setContactMember\(null\)\}/,
+        contactModalContent,
+        /role="dialog"[\s\S]*?onClick=\{onClose\}/,
         'Contact modal must declare role="dialog" and close on backdrop tap'
       );
     });
@@ -195,7 +211,7 @@ describe('Planning Contact, Week Sync & Simplification Improvements', () => {
     it('provides direct "Message" chat button routing to native sms', () => {
       assert.match(
         planningContent,
-        /<a[\s\S]*?href=\{`sms:\$\{contactMember\.telephone\.replace\(/,
+        /<a[\s\S]*?href=\{`sms:\$\{sanitizePhoneHref\(member\.telephone\)\}`\}/,
         'Contact modal must provide a direct Message link routing to sms:'
       );
     });
@@ -203,7 +219,7 @@ describe('Planning Contact, Week Sync & Simplification Improvements', () => {
     it('provides direct "Téléphone" tel: link with sanitized phone format', () => {
       assert.match(
         planningContent,
-        /<a[\s\S]*?href=\{`tel:\$\{[\s\S]*?contactMember\.telephone[\s\S]*?\}`\}[\s\S]*?>[\s\S]*?Téléphone[\s\S]*?<\/a>/,
+        /<a[\s\S]*?href=\{`tel:\$\{sanitizePhoneHref\(member\.telephone\)\}`\}[\s\S]*?>[\s\S]*?Téléphone[\s\S]*?<\/a>/,
         'Contact modal must provide direct tel: anchor with member telephone'
       );
     });
@@ -226,8 +242,7 @@ describe('Planning Contact, Week Sync & Simplification Improvements', () => {
   // Job Site Details Updates (ChantierDetail.tsx)
   // =========================================================================
   describe('Job Site Details Updates (ChantierDetail.tsx)', () => {
-    const chantierDetailPath = resolve(projectRoot, 'src/pages/ChantierDetail.tsx');
-    const chantierDetailContent = readFileSync(chantierDetailPath, 'utf-8');
+    const chantierDetailContent = readChantierDetailBundle();
 
     it('completely removes the "Discussion d\'équipe du chantier" card', () => {
       assert.doesNotMatch(
@@ -240,12 +255,12 @@ describe('Planning Contact, Week Sync & Simplification Improvements', () => {
     it('provides both Message and Call action buttons for each team member in "ÉQUIPE SUR LE CHANTIER"', () => {
       assert.match(
         chantierDetailContent,
-        /<a[\s\S]*?href=\{`sms:\$\{member\.telephone[\s\S]*?<MessageSquare/s,
+        /<a[\s\S]*?href=\{`sms:\$\{sanitizePhoneHref\(member\.telephone\)[\s\S]*?<MessageSquare/s,
         'ChantierDetail must render Message icon button routing to sms:${member.telephone}'
       );
       assert.match(
         chantierDetailContent,
-        /href=\{`tel:\$\{member\.telephone/s,
+        /href=\{`tel:\$\{sanitizePhoneHref\(member\.telephone\)/s,
         'ChantierDetail must render Call icon button with tel: link'
       );
     });
@@ -253,12 +268,12 @@ describe('Planning Contact, Week Sync & Simplification Improvements', () => {
     it('enforces min 48x48px mobile touch boundaries on both Message and Call buttons', () => {
       assert.match(
         chantierDetailContent,
-        /<a[\s\S]*?href=\{`sms:\$\{member\.telephone[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]/s,
+        /<a[\s\S]*?href=\{`sms:\$\{sanitizePhoneHref\(member\.telephone\)[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]/s,
         'Team member Message button must enforce min 48x48px touch boundaries'
       );
       assert.match(
         chantierDetailContent,
-        /href=\{`tel:\$\{member\.telephone[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]/s,
+        /href=\{`tel:\$\{sanitizePhoneHref\(member\.telephone\)[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]/s,
         'Team member Call button must enforce min 48x48px touch boundaries'
       );
     });
@@ -266,7 +281,7 @@ describe('Planning Contact, Week Sync & Simplification Improvements', () => {
     it('clearly distinguishes the current user and disables self-calling and self-messaging', () => {
       assert.match(
         chantierDetailContent,
-        /const\s+isCurrentUser\s*=\s*profile\?\.id\s*===\s*member\.id/,
+        /const\s+isCurrentUser\s*=\s*currentUserId\s*===\s*member\.id/,
         'ChantierDetail must check if teammate is the current user'
       );
       assert.match(
@@ -276,7 +291,7 @@ describe('Planning Contact, Week Sync & Simplification Improvements', () => {
       );
       assert.match(
         chantierDetailContent,
-        /!isCurrentUser\s*&&[\s\S]*?href=\{`sms:\$\{member\.telephone/s,
+        /!isCurrentUser\s*&&[\s\S]*?href=\{`sms:\$\{sanitizePhoneHref\(member\.telephone\)/s,
         'Action buttons (Call and Message) must be hidden on the current user\'s own card'
       );
     });

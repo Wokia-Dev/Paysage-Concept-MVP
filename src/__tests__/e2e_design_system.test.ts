@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readHomeBundle } from './helpers/sourceReader.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -189,7 +190,7 @@ describe('E2E Design System & Theme Integration (R1 & R2)', () => {
     });
 
     it('verifies Home dashboard cards utilize organic rounded borders (rounded-2xl or rounded-3xl)', () => {
-      const homeContent = readFileSync(resolve(projectRoot, 'src/pages/Home.tsx'), 'utf-8');
+      const homeContent = readHomeBundle();
       const rounded2xlCount = (homeContent.match(/rounded-2xl/g) || []).length;
       const rounded3xlCount = (homeContent.match(/rounded-3xl/g) || []).length;
       assert.ok(
@@ -199,7 +200,7 @@ describe('E2E Design System & Theme Integration (R1 & R2)', () => {
     });
 
     it('verifies interactive controls in Home include outdoor-friendly touch targets', () => {
-      const homeContent = readFileSync(resolve(projectRoot, 'src/pages/Home.tsx'), 'utf-8');
+      const homeContent = readHomeBundle();
       // Steppers, buttons, and navigation pills must provide generous touch padding
       assert.match(
         homeContent,

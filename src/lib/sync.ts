@@ -1,7 +1,8 @@
-import { db, ensureSeedData } from './db';
-import { supabase } from './supabase';
+import { db, ensureSeedData } from './db.ts';
+import { supabase } from './supabase.ts';
 import type { PointageLocal } from '../types/database';
-import { normalizeTimeString } from './hours';
+import { normalizeTimeString } from './hours.ts';
+import { generateUUID } from './formatters.ts';
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
 
@@ -24,15 +25,18 @@ export interface SaveDailyPointageInput {
   heures_sup: number;
 }
 
-function generateUUID(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
+interface PointageUpsertPayload {
+  id: string;
+  profile_id: string;
+  chantier_id: string | null;
+  date: string;
+  heure_debut?: string | null;
+  heure_fin?: string | null;
+  heures_totales: number;
+  temps_pause: number;
+  heures_sup: number;
+  synchronise_le: string;
+  updated_at: string;
 }
 
 class SyncEngine {
@@ -154,11 +158,22 @@ class SyncEngine {
         };
       }
 
+      const currentProfile = await db.profiles.get(session.user.id);
+      const isSupervisor =
+        currentProfile?.role === 'chef_equipe' || currentProfile?.role === 'admin';
+
       for (const pt of pending) {
+        const targetProfileId = pt.profile_id || session.user.id;
+        // Respect RLS : un ouvrier ne peut synchroniser que ses propres pointages
+        if (!isSupervisor && targetProfileId !== session.user.id) {
+          continue;
+        }
+
         try {
-          const payload: Record<string, unknown> = {
+          const nowIso = new Date().toISOString();
+          const payload: PointageUpsertPayload = {
             id: pt.id,
-            profile_id: session.user.id,
+            profile_id: targetProfileId,
             chantier_id: pt.chantier_id || null,
             date: pt.date,
             heure_debut: pt.heure_debut ? normalizeTimeString(pt.heure_debut) : null,
@@ -166,8 +181,8 @@ class SyncEngine {
             heures_totales: Number(pt.heures_totales) || 0,
             temps_pause: Number(pt.temps_pause) || 0,
             heures_sup: Number(pt.heures_sup) || 0,
-            synchronise_le: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            synchronise_le: nowIso,
+            updated_at: nowIso,
           };
 
           // UPSERT ciblant la contrainte d'unicité (profile_id, date)
@@ -191,7 +206,7 @@ class SyncEngine {
           }
 
           if (!error) {
-            const finalId = data?.id || pt.id;
+            const finalId = typeof data?.id === 'string' ? data.id : pt.id;
             if (pt.id !== finalId) {
               await db.pointages.delete(pt.id);
             }
@@ -200,8 +215,12 @@ class SyncEngine {
               id: finalId,
               synced: true,
               error: null,
-              synchronise_le: data?.synchronise_le || payload.synchronise_le,
-              updated_at: data?.updated_at || payload.updated_at,
+              synchronise_le:
+                typeof data?.synchronise_le === 'string'
+                  ? data.synchronise_le
+                  : payload.synchronise_le,
+              updated_at:
+                typeof data?.updated_at === 'string' ? data.updated_at : payload.updated_at,
             });
             successCount++;
           } else {

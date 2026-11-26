@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readChantiersBundle, readChatBundle, readPlusBundle } from './helpers/sourceReader.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -11,9 +12,6 @@ const projectRoot = resolve(__dirname, '../..');
 
 describe('Milestone 4 Empirical Adversarial Stress Harness (Challenger 2)', () => {
   const equipePath = resolve(projectRoot, 'src/pages/Equipe.tsx');
-  const plusPath = resolve(projectRoot, 'src/pages/Plus.tsx');
-  const chantiersPath = resolve(projectRoot, 'src/pages/Chantiers.tsx');
-  const chatPreviewPath = resolve(projectRoot, 'src/pages/ChatPreview.tsx');
   const chatRoomViewPath = resolve(projectRoot, 'src/components/modules/ChatRoomView.tsx');
   const chatTypesPath = resolve(projectRoot, 'src/types/chat.ts');
   const dbPath = resolve(projectRoot, 'src/lib/db.ts');
@@ -25,9 +23,9 @@ describe('Milestone 4 Empirical Adversarial Stress Harness (Challenger 2)', () =
   );
 
   const equipeContent = readFileSync(equipePath, 'utf-8');
-  const plusContent = readFileSync(plusPath, 'utf-8');
-  const chantiersContent = readFileSync(chantiersPath, 'utf-8');
-  const chatPreviewContent = readFileSync(chatPreviewPath, 'utf-8');
+  const plusContent = readPlusBundle();
+  const chantiersContent = readChantiersBundle();
+  const chatPreviewContent = readChatBundle();
   const chatRoomViewContent = readFileSync(chatRoomViewPath, 'utf-8');
   const dbContent = readFileSync(dbPath, 'utf-8');
   const syncContent = readFileSync(syncPath, 'utf-8');
@@ -255,7 +253,7 @@ describe('Milestone 4 Empirical Adversarial Stress Harness (Challenger 2)', () =
       it('supports instant multi-field search across client, address, and description', () => {
         assert.match(
           chantiersContent,
-          /c\.nom_client\.toLowerCase\(\)\.includes\(searchQuery\.toLowerCase\(\)\) \|\|[\s\S]*?c\.adresse\.toLowerCase\(\)\.includes\(searchQuery\.toLowerCase\(\)\) \|\|[\s\S]*?c\.description/,
+          /c\.nom_client\.toLowerCase\(\)\.includes\(q\) \|\|[\s\S]*?c\.adresse\.toLowerCase\(\)\.includes\(q\) \|\|[\s\S]*?c\.description/,
           'Chantiers search must match client name, address, or description'
         );
       });
@@ -263,7 +261,7 @@ describe('Milestone 4 Empirical Adversarial Stress Harness (Challenger 2)', () =
       it('enforces minimum 48px touch targets on search, status filter tabs, and new chantier button', () => {
         assert.match(
           chantiersContent,
-          /onClick=\{\(\) => setIsCreateModalOpen\(true\)\}[\s\S]*?min-h-\[48px\]/,
+          /onClick=\{\(\) => catalog\.setIsCreateModalOpen\(true\)\}[\s\S]*?min-h-\[48px\]/,
           'Create chantier button must have min-h-[48px]'
         );
         assert.match(
@@ -273,7 +271,7 @@ describe('Milestone 4 Empirical Adversarial Stress Harness (Challenger 2)', () =
         );
         assert.match(
           chantiersContent,
-          /statusFilter === tab\.key[\s\S]*?min-h-\[48px\]/,
+          /catalog\.statusFilter === tab\.key[\s\S]*?min-h-\[48px\]/,
           'Status filter buttons must have min-h-[48px]'
         );
       });
@@ -281,12 +279,12 @@ describe('Milestone 4 Empirical Adversarial Stress Harness (Challenger 2)', () =
       it('enforces minimum 48px touch targets on card actions (Modifier, Affecter, Détails) and GPS link', () => {
         assert.match(
           chantiersContent,
-          /onClick=\{\(\) => handleOpenEdit\(chantier\)\}[\s\S]*?min-h-\[48px\]/,
+          /onClick=\{\(\) => onEdit\(chantier\)\}[\s\S]*?min-h-\[48px\]/,
           'Modifier button must have min-h-[48px]'
         );
         assert.match(
           chantiersContent,
-          /onClick=\{\(\) => \{[\s\S]*?setAssigningChantier\(chantier\)[\s\S]*?min-h-\[48px\]/,
+          /onClick=\{\(\) => onAssign\(chantier\)\}[\s\S]*?min-h-\[48px\]/,
           'Affecter button must have min-h-[48px]'
         );
         assert.match(
@@ -296,7 +294,7 @@ describe('Milestone 4 Empirical Adversarial Stress Harness (Challenger 2)', () =
         );
         assert.match(
           chantiersContent,
-          /href=\{`https:\/\/maps\.google\.com\/\?q=\$\{encodeURIComponent\(chantier\.adresse\)\}`\}[\s\S]*?min-h-\[48px\]/,
+          /href=\{getMapsUrl\(chantier\.adresse\)\}[\s\S]*?min-h-\[48px\]/,
           'GPS link must have min-h-[48px]'
         );
       });
@@ -323,13 +321,13 @@ describe('Milestone 4 Empirical Adversarial Stress Harness (Challenger 2)', () =
     it('updates Dexie immediately and Supabase conditionally on online in handleUpdateChantier', () => {
       assert.match(
         chantiersContent,
-        /await db\.chantiers\.update\(editingChantier\.id, updatedData\)/,
+        /await db\.chantiers\.update\(chantierId, updatedData\)/,
         'Chantier update must immediately persist to local Dexie'
       );
       assert.match(
         chantiersContent,
-        /if \(navigator\.onLine\)[\s\S]*?await supabase\s*\.from\(['"]chantiers['"]\)\s*\.update/,
-        'Chantier update must synchronize to Supabase when online'
+        /mode\.kind === 'online_jwt'[\s\S]*?await supabase\s*\.from\(['"]chantiers['"]\)\s*\.update/,
+        'Chantier update must synchronize to Supabase when online with active session'
       );
     });
 
@@ -359,18 +357,8 @@ describe('Milestone 4 Empirical Adversarial Stress Harness (Challenger 2)', () =
     it('enforces minimum 48x48px hit areas on all modal close buttons and >= 48px on form controls', () => {
       assert.match(
         chantiersContent,
-        /onClick=\{\(\) => setIsCreateModalOpen\(false\)\}[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12/,
-        'Create modal close button must enforce 48x48px'
-      );
-      assert.match(
-        chantiersContent,
-        /onClick=\{\(\) => setEditingChantier\(null\)\}[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12/,
-        'Edit modal close button must enforce 48x48px'
-      );
-      assert.match(
-        chantiersContent,
-        /onClick=\{\(\) => setAssigningChantier\(null\)\}[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12/,
-        'Assign modal close button must enforce 48x48px'
+        /onClick=\{onClose\}[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12/,
+        'Modal close buttons must enforce 48x48px'
       );
       assert.match(
         chantiersContent,

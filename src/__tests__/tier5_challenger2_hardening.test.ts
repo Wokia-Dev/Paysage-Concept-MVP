@@ -4,6 +4,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  readAppLayoutBundle,
+  readChantierDetailBundle,
+  readChatBundle,
+  readHomeBundle,
+  readPlanningBundle,
+} from './helpers/sourceReader.ts';
 
 import {
   calculateAutoOvertime,
@@ -51,24 +58,19 @@ function getContrastRatio(hex1: string, hex2: string): number {
 describe('Tier 5 Independent Adversarial Coverage Hardening (Challenger 2)', () => {
   // Source files under audit
   const indexPath = resolve(projectRoot, 'src/index.css');
-  const homePath = resolve(projectRoot, 'src/pages/Home.tsx');
-  const planningPath = resolve(projectRoot, 'src/pages/Planning.tsx');
-  const chantierDetailPath = resolve(projectRoot, 'src/pages/ChantierDetail.tsx');
-  const chatPreviewPath = resolve(projectRoot, 'src/pages/ChatPreview.tsx');
   const chatRoomViewPath = resolve(projectRoot, 'src/components/modules/ChatRoomView.tsx');
   const bottomNavPath = resolve(projectRoot, 'src/components/layout/BottomNav.tsx');
-  const appLayoutPath = resolve(projectRoot, 'src/components/layout/AppLayout.tsx');
   const dateSelectorPillPath = resolve(projectRoot, 'src/components/common/DateSelectorPill.tsx');
   const circularGaugePath = resolve(projectRoot, 'src/components/common/CircularProgressGauge.tsx');
 
   const indexContent = readFileSync(indexPath, 'utf-8');
-  const homeContent = readFileSync(homePath, 'utf-8');
-  const planningContent = readFileSync(planningPath, 'utf-8');
-  const chantierDetailContent = readFileSync(chantierDetailPath, 'utf-8');
-  const chatPreviewContent = readFileSync(chatPreviewPath, 'utf-8');
+  const homeContent = readHomeBundle();
+  const planningContent = readPlanningBundle();
+  const chantierDetailContent = readChantierDetailBundle();
+  const chatPreviewContent = readChatBundle();
   const chatRoomViewContent = readFileSync(chatRoomViewPath, 'utf-8');
   const bottomNavContent = readFileSync(bottomNavPath, 'utf-8');
-  const appLayoutContent = readFileSync(appLayoutPath, 'utf-8');
+  const appLayoutContent = readAppLayoutBundle();
   const dateSelectorPillContent = readFileSync(dateSelectorPillPath, 'utf-8');
   const circularGaugeContent = readFileSync(circularGaugePath, 'utf-8');
 
@@ -424,11 +426,16 @@ describe('Tier 5 Independent Adversarial Coverage Hardening (Challenger 2)', () 
       fall = stepNextDay(fall);
       assert.equal(fall, '2026-10-26');
 
-      // Confirm Home.tsx utilizes midday UTC string concatenation T12:00:00Z
+      // Confirm Home uses midday UTC anchoring (via formatFrenchWeekdayDate / parseMiddayUTC)
       assert.match(
         homeContent,
-        /selectedDateStr\s*\+\s*['"]T12:00:00Z['"]/,
-        'Home.tsx must anchor to T12:00:00Z to avoid timezone day shifts'
+        /formatFrenchWeekdayDate\(selectedDateStr\)/,
+        'Home modal must format selectedDateStr via midday-UTC helper'
+      );
+      assert.match(
+        homeContent,
+        /Date\.UTC\([\s\S]*?12,\s*0,\s*0\)/,
+        'Date helper must anchor to 12:00:00 UTC to avoid timezone day shifts'
       );
     });
 

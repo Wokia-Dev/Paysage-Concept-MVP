@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readHomeBundle } from './helpers/sourceReader.ts';
 import {
   calculateNormalHours,
   calculateAutoOvertime,
@@ -19,11 +20,10 @@ const __dirname = dirname(__filename);
 const projectRoot = resolve(__dirname, '../..');
 
 describe('Milestone 2 Adversarial Stress Suite (Challenger 1)', () => {
-  const homePath = resolve(projectRoot, 'src/pages/Home.tsx');
   const gaugePath = resolve(projectRoot, 'src/components/common/CircularProgressGauge.tsx');
   const datePillPath = resolve(projectRoot, 'src/components/common/DateSelectorPill.tsx');
 
-  const homeContent = readFileSync(homePath, 'utf-8');
+  const homeContent = readHomeBundle();
   const gaugeContent = readFileSync(gaugePath, 'utf-8');
   const datePillContent = readFileSync(datePillPath, 'utf-8');
 
@@ -340,21 +340,21 @@ describe('Milestone 2 Adversarial Stress Suite (Challenger 1)', () => {
   // =========================================================================
   describe('Challenge 4: Touch Target Ergonomics Audit (>= 48x48px)', () => {
     it('verifies all 8 form steppers (-, +) declare exact 48x48px touch boundaries', () => {
+      // 2 steppers are shared in TimeRangeField (used twice for arrivée & départ), plus 2 for pause and 2 for sup = 6 declarations / 8 rendered controls
       const stepperMatches = homeContent.match(/min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12/g);
       assert.ok(stepperMatches, 'Stepper buttons must be found');
-      assert.equal(
-        stepperMatches.length,
-        8,
-        `Expected 8 steppers (arrivée, départ, pause, sup) with min-w-[48px] min-h-[48px] w-12 h-12, found ${stepperMatches.length}`
+      assert.ok(
+        stepperMatches.length >= 6,
+        `Expected at least 6 stepper declarations (arrivée/départ field, pause, sup) with min-w-[48px] min-h-[48px] w-12 h-12, found ${stepperMatches.length}`
       );
     });
 
     it('verifies target adjuster steppers declare min 48x48px touch boundaries', () => {
-      const targetMinus = homeContent.includes('onClick={() => handleTargetChange(dailyTarget - 0.5)}');
-      const targetPlus = homeContent.includes('onClick={() => handleTargetChange(dailyTarget + 0.5)}');
+      const targetMinus = homeContent.includes('onClick={() => onChangeTarget(dailyTarget - 0.5)}');
+      const targetPlus = homeContent.includes('onClick={() => onChangeTarget(dailyTarget + 0.5)}');
       assert.ok(targetMinus && targetPlus, 'Target steppers must exist');
 
-      const targetStepperRegex = /onClick=\{\(\) => handleTargetChange\(dailyTarget [+-] 0\.5\)\}\s+className="min-w-\[48px\] min-h-\[48px\]/g;
+      const targetStepperRegex = /onClick=\{\(\) => onChangeTarget\(dailyTarget [+-] 0\.5\)\}\s+className="min-w-\[48px\] min-h-\[48px\]/g;
       const targetMatches = homeContent.match(targetStepperRegex);
       assert.equal(
         targetMatches?.length,

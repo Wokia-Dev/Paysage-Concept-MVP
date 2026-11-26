@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readHomeBundle } from './helpers/sourceReader.ts';
 
 import {
   formatHours,
@@ -257,7 +258,7 @@ describe('Declarative Pointages - Unit & Integration Tests', () => {
     });
 
     it('verifies Home.tsx contains target modifier and explicit overtime breakdown labels', () => {
-      const homeContent = readFileSync(resolve(projectRoot, 'src/pages/Home.tsx'), 'utf-8');
+      const homeContent = readHomeBundle();
       assert.match(homeContent, /isEditingTarget/);
       assert.match(homeContent, /calculateAutoOvertime/);
       assert.match(homeContent, /calculateNormalHours/);
@@ -354,7 +355,7 @@ describe('Declarative Pointages - Unit & Integration Tests', () => {
     });
 
     it('verifies zero legacy clocking actions in src/pages/Home.tsx', () => {
-      const homeContent = readFileSync(resolve(projectRoot, 'src/pages/Home.tsx'), 'utf-8');
+      const homeContent = readHomeBundle();
       assert.doesNotMatch(homeContent, /PointageType/);
       assert.doesNotMatch(homeContent, /getQuickGeolocation/);
       assert.doesNotMatch(homeContent, /handlePointage\(/);

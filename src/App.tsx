@@ -1,28 +1,33 @@
+import { Suspense, lazy, type ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/useAuth';
 import { AppLayout } from './components/layout/AppLayout';
-import { Login } from './pages/Login';
 import { Home } from './pages/Home';
-import { Planning } from './pages/Planning';
-import { ChantierDetail } from './pages/ChantierDetail';
-import { Chantiers } from './pages/Chantiers';
-import { Equipe } from './pages/Equipe';
-import { ChatPreview } from './pages/ChatPreview';
-import { Plus } from './pages/Plus';
 import { Loader2 } from 'lucide-react';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-    },
-  },
-});
+const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })));
+const Planning = lazy(() => import('./pages/Planning').then((m) => ({ default: m.Planning })));
+const ChantierDetail = lazy(() =>
+  import('./pages/ChantierDetail').then((m) => ({ default: m.ChantierDetail }))
+);
+const Chantiers = lazy(() => import('./pages/Chantiers').then((m) => ({ default: m.Chantiers })));
+const Equipe = lazy(() => import('./pages/Equipe').then((m) => ({ default: m.Equipe })));
+const ChatPreview = lazy(() =>
+  import('./pages/ChatPreview').then((m) => ({ default: m.ChatPreview }))
+);
+const Plus = lazy(() => import('./pages/Plus').then((m) => ({ default: m.Plus })));
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function RouteLoadingFallback() {
+  return (
+    <div className="min-h-[240px] flex flex-col items-center justify-center p-6 text-foret">
+      <Loader2 className="w-7 h-7 animate-spin text-terracotta mb-2" />
+      <p className="text-xs font-bold text-sauge">Chargement...</p>
+    </div>
+  );
+}
+
+function ProtectedRoute({ children }: { children: ReactNode }) {
   const { profile, loading } = useAuth();
 
   if (loading) {
@@ -42,7 +47,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function PublicRoute({ children }: { children: React.ReactNode }) {
+function PublicRoute({ children }: { children: ReactNode }) {
   const { profile, loading } = useAuth();
 
   if (loading) {
@@ -56,7 +61,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function SupervisorRoute({ children }: { children: React.ReactNode }) {
+function SupervisorRoute({ children }: { children: ReactNode }) {
   const { profile } = useAuth();
 
   if (profile?.role === 'ouvrier') {
@@ -68,9 +73,9 @@ function SupervisorRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <BrowserRouter basename={import.meta.env.BASE_URL}>
+    <AuthProvider>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
+        <Suspense fallback={<RouteLoadingFallback />}>
           <Routes>
             {/* Route Publique : Connexion */}
             <Route
@@ -110,8 +115,8 @@ export default function App() {
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </QueryClientProvider>
+        </Suspense>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

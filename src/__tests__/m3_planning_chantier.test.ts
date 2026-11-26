@@ -1,19 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = resolve(__dirname, '../..');
+import { readChantierDetailBundle, readPlanningBundle } from './helpers/sourceReader.ts';
 
 describe('Milestone 3: Planning & Fiche Chantier Visual Redesign (R5)', () => {
-  const planningPath = resolve(projectRoot, 'src/pages/Planning.tsx');
-  const chantierDetailPath = resolve(projectRoot, 'src/pages/ChantierDetail.tsx');
-
-  const planningContent = readFileSync(planningPath, 'utf-8');
-  const chantierDetailContent = readFileSync(chantierDetailPath, 'utf-8');
+  const planningContent = readPlanningBundle();
+  const chantierDetailContent = readChantierDetailBundle();
 
   describe('Planning View Redesign (R5 - Planning.tsx)', () => {
     it('declares 3-state period toggle supporting Jour, Semaine, and Mois', () => {
@@ -248,7 +239,7 @@ describe('Milestone 3: Planning & Fiche Chantier Visual Redesign (R5)', () => {
       );
       assert.match(
         chantierDetailContent,
-        /<a[\s\S]*?href=\{`sms:\$\{member\.telephone[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]/,
+        /<a[\s\S]*?href=\{`sms:\$\{sanitizePhoneHref\(member\.telephone\)[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]/,
         'ChantierDetail must provide direct sms link with min 48px touch targets for team members'
       );
     });

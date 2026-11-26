@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ChatConversation, ChatMessage, FilterCategory } from '../types/chat';
+import { readChantiersBundle, readChatBundle, readPlusBundle } from './helpers/sourceReader.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -43,19 +44,16 @@ function calculateContrastRatio(hex1: string, hex2: string): number {
 }
 
 describe('Empirical Adversarial Stress Harness: Milestone 4 (Challenger 1)', () => {
-  const chatPreviewPath = resolve(projectRoot, 'src/pages/ChatPreview.tsx');
   const chatRoomViewPath = resolve(projectRoot, 'src/components/modules/ChatRoomView.tsx');
   const chatTypesPath = resolve(projectRoot, 'src/types/chat.ts');
   const equipePath = resolve(projectRoot, 'src/pages/Equipe.tsx');
-  const plusPath = resolve(projectRoot, 'src/pages/Plus.tsx');
-  const chantiersPath = resolve(projectRoot, 'src/pages/Chantiers.tsx');
 
-  const chatPreviewContent = readFileSync(chatPreviewPath, 'utf-8');
+  const chatPreviewContent = readChatBundle();
   const chatRoomViewContent = readFileSync(chatRoomViewPath, 'utf-8');
   const chatTypesContent = readFileSync(chatTypesPath, 'utf-8');
   const equipeContent = readFileSync(equipePath, 'utf-8');
-  const plusContent = readFileSync(plusPath, 'utf-8');
-  const chantiersContent = readFileSync(chantiersPath, 'utf-8');
+  const plusContent = readPlusBundle();
+  const chantiersContent = readChantiersBundle();
 
   describe('Dimension 1: Static Mock Purity & Zero Realtime Subscriptions in Chat', () => {
     it('verifies chat.ts defines pure static types without external realtime entities', () => {
@@ -319,32 +317,28 @@ describe('Empirical Adversarial Stress Harness: Milestone 4 (Challenger 1)', () 
       // Notification close
       assert.match(chantiersContent, /aria-label="Fermer la notification"[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12/);
       // "Nouveau chantier" button
-      assert.match(chantiersContent, /onClick=\{\(\) => setIsCreateModalOpen\(true\)\}[\s\S]*?min-h-\[48px\]\s+px-4/);
+      assert.match(chantiersContent, /onClick=\{\(\) => catalog\.setIsCreateModalOpen\(true\)\}[\s\S]*?min-h-\[48px\]\s+px-4/);
       // Search input
       assert.match(chantiersContent, /placeholder="Rechercher par client, adresse, travaux\.\.\."[\s\S]*?min-h-\[48px\]/);
       // Clear search button
       assert.match(chantiersContent, /aria-label="Effacer la recherche"[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12/);
       // Status filter tabs
-      assert.match(chantiersContent, /statusFilter === tab\.key[\s\S]*?min-h-\[48px\]\s+px-4/);
+      assert.match(chantiersContent, /catalog\.statusFilter === tab\.key[\s\S]*?min-h-\[48px\]\s+px-4/);
       // Address GPS navigation link
-      assert.match(chantiersContent, /href=\{`https:\/\/maps\.google\.com\/\?q=\$\{encodeURIComponent\(chantier\.adresse\)\}`\}[\s\S]*?min-h-\[48px\]/);
+      assert.match(chantiersContent, /href=\{getMapsUrl\(chantier\.adresse\)\}[\s\S]*?min-h-\[48px\]/);
       // Card action Modifier button
-      assert.match(chantiersContent, /onClick=\{\(\) => handleOpenEdit\(chantier\)\}[\s\S]*?min-h-\[48px\]/);
+      assert.match(chantiersContent, /onClick=\{\(\) => onEdit\(chantier\)\}[\s\S]*?min-h-\[48px\]/);
       // Card action Affecter button
-      assert.match(chantiersContent, /onClick=\{\(\) => \{[\s\S]*?setAssigningChantier\(chantier\)[\s\S]*?min-h-\[48px\]/);
+      assert.match(chantiersContent, /onClick=\{\(\) => onAssign\(chantier\)\}[\s\S]*?min-h-\[48px\]/);
       // Card action Details Link
       assert.match(chantiersContent, /<Link[\s\S]*?to=\{`\/chantier\/\$\{chantier\.id\}`\}[\s\S]*?min-h-\[48px\]/);
 
-      // Create Modal close button
-      assert.match(chantiersContent, /onClick=\{\(\) => setIsCreateModalOpen\(false\)\}[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12/);
-      // Edit Modal close button
-      assert.match(chantiersContent, /onClick=\{\(\) => setEditingChantier\(null\)\}[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12/);
-      // Assign Modal close button
-      assert.match(chantiersContent, /onClick=\{\(\) => setAssigningChantier\(null\)\}[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12/);
+      // Modal close buttons
+      assert.match(chantiersContent, /onClick=\{onClose\}[\s\S]*?min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12/);
       // Assign worker row
-      assert.match(chantiersContent, /onClick=\{\(\) => handleToggleWorker\(p\.id\)\}[\s\S]*?min-h-\[52px\]/);
+      assert.match(chantiersContent, /onClick=\{\(\) => onToggleWorker\(p\.id\)\}[\s\S]*?min-h-\[52px\]/);
       // Assign "Terminer" button
-      assert.match(chantiersContent, /onClick=\{\(\) => setAssigningChantier\(null\)\}[\s\S]*?w-full\s+min-h-\[48px\]/);
+      assert.match(chantiersContent, /onClick=\{onClose\}[\s\S]*?w-full\s+min-h-\[48px\]/);
     });
   });
 

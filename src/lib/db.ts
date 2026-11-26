@@ -1,5 +1,8 @@
 import Dexie, { type Table } from 'dexie';
 import type { Chantier, Affectation, Profile, PointageLocal } from '../types/database';
+import { getTodayDateString } from './dates.ts';
+
+export { getTodayDateString };
 
 export class PaysageDatabase extends Dexie {
   pointages!: Table<PointageLocal, string>;
@@ -144,17 +147,6 @@ export const INITIAL_CHANTIERS: Chantier[] = [
     telephone_client: '04 72 18 50 00',
   },
 ];
-
-export function getTodayDateString(offsetDays = 0): string {
-  const d = new Date();
-  if (offsetDays !== 0) {
-    d.setDate(d.getDate() + offsetDays);
-  }
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 /**
  * Génère le planning pour 1 bonne semaine (7 jours de J-1 à J+5)

@@ -1,9 +1,13 @@
 /// <reference types="node" />
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import {
+  readChantierDetailBundle,
+  readChatBundle,
+  readFilesConcat,
+  readPlanningBundle,
+  readPlusBundle,
+} from './helpers/sourceReader.ts';
 
 import type { Chantier, Profile, Affectation, PointageLocal } from '../types/database.ts';
 import {
@@ -12,22 +16,12 @@ import {
   validateDailyHours,
 } from '../lib/hours.ts';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = resolve(__dirname, '../..');
-
 describe('E2E Real-World Field Landscaper Workflows & Cross-Feature Integration (R3, R5, R6)', () => {
-  const planningContent = readFileSync(resolve(projectRoot, 'src/pages/Planning.tsx'), 'utf-8');
-  const chantierDetailContent = readFileSync(
-    resolve(projectRoot, 'src/pages/ChantierDetail.tsx'),
-    'utf-8'
-  );
-  const chatPreviewContent = readFileSync(
-    resolve(projectRoot, 'src/pages/ChatPreview.tsx'),
-    'utf-8'
-  );
-  const equipeContent = readFileSync(resolve(projectRoot, 'src/pages/Equipe.tsx'), 'utf-8');
-  const plusContent = readFileSync(resolve(projectRoot, 'src/pages/Plus.tsx'), 'utf-8');
+  const planningContent = readPlanningBundle();
+  const chantierDetailContent = readChantierDetailBundle();
+  const chatPreviewContent = readChatBundle();
+  const equipeContent = readFilesConcat(['src/pages/Equipe.tsx']);
+  const plusContent = readPlusBundle();
 
   describe('Tier 1: Feature Coverage — Screen Layouts & Typographic Contracts', () => {
     it('verifies Fiche Chantier renders typographic layout with direct GPS action', () => {

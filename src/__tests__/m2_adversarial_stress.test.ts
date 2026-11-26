@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readHomeBundle } from './helpers/sourceReader.ts';
 
 import {
   formatHours,
@@ -19,13 +20,16 @@ const __dirname = dirname(__filename);
 const projectRoot = resolve(__dirname, '../..');
 
 describe('Milestone 2 Adversarial Stress Suite (Challenger 2)', () => {
-  const homePath = resolve(projectRoot, 'src/pages/Home.tsx');
   const gaugePath = resolve(projectRoot, 'src/components/common/CircularProgressGauge.tsx');
   const datePillPath = resolve(projectRoot, 'src/components/common/DateSelectorPill.tsx');
   const syncPath = resolve(projectRoot, 'src/lib/sync.ts');
   const dbPath = resolve(projectRoot, 'src/lib/db.ts');
 
-  const homeContent = readFileSync(homePath, 'utf-8');
+  const homeContent = readHomeBundle();
+  const heroCardContent = readFileSync(
+    resolve(projectRoot, 'src/components/home/HeroChantierCard.tsx'),
+    'utf-8'
+  );
   const gaugeContent = readFileSync(gaugePath, 'utf-8');
   const datePillContent = readFileSync(datePillPath, 'utf-8');
   const syncContent = readFileSync(syncPath, 'utf-8');
@@ -56,23 +60,16 @@ describe('Milestone 2 Adversarial Stress Suite (Challenger 2)', () => {
     });
 
     it('verifies Hero Chantier card is strictly typographic and ergonomic', () => {
-      // Find the hero chantier section in Home.tsx
-      const heroSectionMatch = homeContent.match(
-        /2\.\s*Hero\s*Chantier\s*Card([\s\S]*?)3\.\s*Bandeau\s*widgets/
-      );
-      assert.ok(heroSectionMatch, 'Hero Chantier card section must be present in Home.tsx');
-      const heroSection = heroSectionMatch[1];
-
       // Must have client name, status badge, address with Google Maps link
-      assert.match(heroSection, /nom_client/, 'Hero card must display client name');
-      assert.match(heroSection, /getStatusBadge/, 'Hero card must display status badge');
-      assert.match(heroSection, /https:\/\/maps\.google\.com\/\?q=/, 'Hero card must link to GPS navigation');
-      assert.doesNotMatch(heroSection, /Intervention prévue à/, 'Hero card must not display hardcoded intervention time');
-      assert.match(heroSection, /Consulter la fiche détaillée/, 'Hero card must link to detailed sheet');
+      assert.match(heroCardContent, /nom_client/, 'Hero card must display client name');
+      assert.match(heroCardContent, /getStatusBadge/, 'Hero card must display status badge');
+      assert.match(homeContent, /https:\/\/maps\.google\.com\/\?q=/, 'Hero card must link to GPS navigation');
+      assert.doesNotMatch(heroCardContent, /Intervention prévue à/, 'Hero card must not display hardcoded intervention time');
+      assert.match(heroCardContent, /Consulter la fiche détaillée/, 'Hero card must link to detailed sheet');
 
       // Carousel dots must be typographic SVG/div elements, not image carousels
-      assert.match(heroSection, /bg-foret rounded-full/, 'Hero card uses typographic dot indicator');
-      assert.doesNotMatch(heroSection, /<img|<picture|thumbnail|photo/i, 'Hero card must not contain images');
+      assert.match(heroCardContent, /bg-foret rounded-full/, 'Hero card uses typographic dot indicator');
+      assert.doesNotMatch(heroCardContent, /<img|<picture|thumbnail|photo/i, 'Hero card must not contain images');
     });
   });
 

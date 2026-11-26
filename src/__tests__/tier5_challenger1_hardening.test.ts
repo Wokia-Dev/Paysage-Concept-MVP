@@ -4,6 +4,15 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  readAppLayoutBundle,
+  readChantierDetailBundle,
+  readChantiersBundle,
+  readChatBundle,
+  readHomeBundle,
+  readPlanningBundle,
+  readPlusBundle,
+} from './helpers/sourceReader.ts';
 
 import type { Profile, Affectation, PointageLocal } from '../types/database.ts';
 import type { ChatConversation, FilterCategory } from '../types/chat.ts';
@@ -57,17 +66,17 @@ describe('Tier 5 Adversarial Coverage Hardening (Challenger 1)', () => {
   // Load source files for white-box inspection
   const indexCss = readFileSync(resolve(projectRoot, 'src/index.css'), 'utf-8');
   const bottomNavContent = readFileSync(resolve(projectRoot, 'src/components/layout/BottomNav.tsx'), 'utf-8');
-  const appLayoutContent = readFileSync(resolve(projectRoot, 'src/components/layout/AppLayout.tsx'), 'utf-8');
-  const homeContent = readFileSync(resolve(projectRoot, 'src/pages/Home.tsx'), 'utf-8');
+  const appLayoutContent = readAppLayoutBundle();
+  const homeContent = readHomeBundle();
   const circularGaugeContent = readFileSync(resolve(projectRoot, 'src/components/common/CircularProgressGauge.tsx'), 'utf-8');
   const datePillContent = readFileSync(resolve(projectRoot, 'src/components/common/DateSelectorPill.tsx'), 'utf-8');
-  const planningContent = readFileSync(resolve(projectRoot, 'src/pages/Planning.tsx'), 'utf-8');
-  const chantierDetailContent = readFileSync(resolve(projectRoot, 'src/pages/ChantierDetail.tsx'), 'utf-8');
-  const chatPreviewContent = readFileSync(resolve(projectRoot, 'src/pages/ChatPreview.tsx'), 'utf-8');
+  const planningContent = readPlanningBundle();
+  const chantierDetailContent = readChantierDetailBundle();
+  const chatPreviewContent = readChatBundle();
   const chatRoomViewContent = readFileSync(resolve(projectRoot, 'src/components/modules/ChatRoomView.tsx'), 'utf-8');
   const equipeContent = readFileSync(resolve(projectRoot, 'src/pages/Equipe.tsx'), 'utf-8');
-  const plusContent = readFileSync(resolve(projectRoot, 'src/pages/Plus.tsx'), 'utf-8');
-  const chantiersContent = readFileSync(resolve(projectRoot, 'src/pages/Chantiers.tsx'), 'utf-8');
+  const plusContent = readPlusBundle();
+  const chantiersContent = readChantiersBundle();
   const dbContent = readFileSync(resolve(projectRoot, 'src/lib/db.ts'), 'utf-8');
   const syncContent = readFileSync(resolve(projectRoot, 'src/lib/sync.ts'), 'utf-8');
 
@@ -846,14 +855,16 @@ describe('Tier 5 Adversarial Coverage Hardening (Challenger 1)', () => {
       // Home.tsx steppers (saisie par plages horaires)
       assert.match(
         homeContent,
-        /min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12[\s\S]*?Diminuer heure d'arrivée/,
+        /min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12[\s\S]*?aria-label=\{decreaseAriaLabel\}/,
         'Home minus stepper must enforce >= 48x48px'
       );
       assert.match(
         homeContent,
-        /min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12[\s\S]*?Augmenter heure d'arrivée/,
+        /min-w-\[48px\]\s+min-h-\[48px\]\s+w-12\s+h-12[\s\S]*?aria-label=\{increaseAriaLabel\}/,
         'Home plus stepper must enforce >= 48x48px'
       );
+      assert.match(homeContent, /decreaseAriaLabel="Diminuer heure d'arrivée"/);
+      assert.match(homeContent, /increaseAriaLabel="Augmenter heure d'arrivée"/);
     });
   });
 });

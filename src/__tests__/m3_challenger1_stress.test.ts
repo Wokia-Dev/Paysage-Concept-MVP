@@ -1,13 +1,7 @@
 /// <reference types="node" />
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = resolve(__dirname, '../..');
+import { readChantierDetailBundle, readPlanningBundle } from './helpers/sourceReader.ts';
 
 /**
  * Pure oracle replica of the Planning.tsx month grid generator algorithm
@@ -152,11 +146,8 @@ function computeTeamPresence(
 }
 
 describe('Milestone 3 Adversarial Stress Suite (Challenger 1)', () => {
-  const planningPath = resolve(projectRoot, 'src/pages/Planning.tsx');
-  const chantierDetailPath = resolve(projectRoot, 'src/pages/ChantierDetail.tsx');
-
-  const planningContent = readFileSync(planningPath, 'utf-8');
-  const chantierDetailContent = readFileSync(chantierDetailPath, 'utf-8');
+  const planningContent = readPlanningBundle();
+  const chantierDetailContent = readChantierDetailBundle();
 
   // =========================================================================
   // Dimension 1: Calendar Grid Math across 28, 29, 30, and 31-day Months & Leap Years
@@ -440,13 +431,18 @@ describe('Milestone 3 Adversarial Stress Suite (Challenger 1)', () => {
     it('verifies ChantierDetail and Planning strictly use encodeURIComponent for GPS links', () => {
       assert.match(
         chantierDetailContent,
-        /https:\/\/maps\.google\.com\/\?q=\$\{encodeURIComponent\(chantier\.adresse\)\}/,
-        'ChantierDetail must wrap chantier.adresse in encodeURIComponent'
+        /getMapsUrl\(chantier\.adresse\)/,
+        'ChantierDetail must use getMapsUrl(chantier.adresse)'
       );
       assert.match(
         planningContent,
-        /https:\/\/maps\.google\.com\/\?q=\$\{encodeURIComponent\(chantier\.adresse\)\}/,
-        'Planning must wrap chantier.adresse in encodeURIComponent'
+        /getMapsUrl\(chantier\.adresse\)/,
+        'Planning must use getMapsUrl(chantier.adresse)'
+      );
+      assert.match(
+        planningContent,
+        /https:\/\/maps\.google\.com\/\?q=\$\{encodeURIComponent\(adresse\)\}/,
+        'Shared getMapsUrl helper must wrap address in encodeURIComponent'
       );
     });
 
@@ -551,8 +547,8 @@ describe('Milestone 3 Adversarial Stress Suite (Challenger 1)', () => {
     it('confirms site chat shortcut routes to native sms scheme without live Realtime', () => {
       assert.match(
         chantierDetailContent,
-        /<a\s+[^>]*href=\{`sms:\$\{member\.telephone/,
-        'ChantierDetail must provide anchor with sms:${member.telephone}'
+        /<a\s+[^>]*href=\{`sms:\$\{sanitizePhoneHref\(member\.telephone\)\}`\}/,
+        'ChantierDetail must provide anchor with sanitized sms:href'
       );
       assert.doesNotMatch(
         chantierDetailContent,
