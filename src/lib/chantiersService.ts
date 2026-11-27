@@ -1,7 +1,13 @@
 import { db } from './db.ts';
 import { supabase } from './supabase.ts';
 import { generateUUID } from './formatters.ts';
+import type { NewAffectationInput } from './affectationsUtils.ts';
 import type { Affectation, Chantier, ChantierStatut } from '../types/database';
+
+export interface BatchAffectationPayload {
+  toAdd: NewAffectationInput[];
+  toRemoveIds: string[];
+}
 
 export interface ChantierFormInput {
   nom_client: string;
@@ -244,6 +250,75 @@ export async function toggleWorkerAffectation(params: {
     return {
       ok: false,
       error: err instanceof Error ? err.message : "Erreur lors de la modification de l'affectation",
+    };
+  }
+}
+
+/**
+ * Applique un lot d'ajouts et de retraits d'affectations dans Dexie et Supabase (si session JWT active).
+ */
+export async function applyBatchAffectations(
+  payload: BatchAffectationPayload
+): Promise<MutationResult<{ addedCount: number; removedCount: number }>> {
+  const { toAdd, toRemoveIds } = payload;
+  if (toAdd.length === 0 && toRemoveIds.length === 0) {
+    return { ok: true, data: { addedCount: 0, removedCount: 0 } };
+  }
+
+  try {
+    const mode = await resolveMutationMode();
+    if (mode.kind === 'blocked') {
+      return { ok: false, error: mode.error };
+    }
+
+    if (toRemoveIds.length > 0) {
+      if (mode.kind === 'online_jwt') {
+        const { error } = await supabase.from('affectations').delete().in('id', toRemoveIds);
+        if (error) {
+          return { ok: false, error: `Erreur Supabase : ${error.message}` };
+        }
+      }
+      await db.affectations.bulkDelete(toRemoveIds);
+    }
+
+    const newRecords: Affectation[] = toAdd.map((item) => ({
+      id: generateUUID(),
+      chantier_id: item.chantier_id,
+      profile_id: item.profile_id,
+      date_intervention: item.date_intervention,
+    }));
+
+    if (newRecords.length > 0) {
+      if (mode.kind === 'online_jwt') {
+        const { error } = await supabase.from('affectations').insert(
+          newRecords.map((rec) => ({
+            id: rec.id,
+            chantier_id: rec.chantier_id,
+            profile_id: rec.profile_id,
+            date_intervention: rec.date_intervention,
+          }))
+        );
+        if (error) {
+          return { ok: false, error: `Erreur Supabase : ${error.message}` };
+        }
+      }
+      await db.affectations.bulkPut(newRecords);
+    }
+
+    return {
+      ok: true,
+      data: {
+        addedCount: newRecords.length,
+        removedCount: toRemoveIds.length,
+      },
+    };
+  } catch (err: unknown) {
+    return {
+      ok: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : 'Erreur lors de la mise à jour groupée des affectations',
     };
   }
 }

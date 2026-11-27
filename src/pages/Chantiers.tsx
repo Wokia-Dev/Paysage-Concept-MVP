@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { AlertCircle, Briefcase, Building, CheckCircle2, Plus, Search, X } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { getTodayDateString } from '../lib/db';
+import { getInitialDailyDateForChantier } from '../lib/affectationsUtils';
 import { useChantiersCatalog } from '../hooks/useChantiersCatalog';
 import { ChantierCard } from '../components/chantiers/ChantierCard';
 import { ChantierFormModal } from '../components/chantiers/ChantierFormModal';
@@ -148,7 +149,7 @@ export function Chantiers() {
               onEdit={catalog.handleOpenEdit}
               onAssign={(c) => {
                 catalog.setAssigningChantier(c);
-                catalog.setAssignDate(getTodayDateString(0));
+                catalog.setAssignDate(getInitialDailyDateForChantier(c));
               }}
             />
           ))}
@@ -181,11 +182,13 @@ export function Chantiers() {
       {catalog.assigningChantier && (
         <ChantierAssignModal
           chantier={catalog.assigningChantier}
+          allChantiers={catalog.chantiers}
           profiles={catalog.profiles}
           affectations={catalog.affectations}
           assignDate={catalog.assignDate}
           onChangeDate={catalog.setAssignDate}
           onToggleWorker={catalog.handleToggleWorker}
+          onApplyBatch={catalog.handleApplyBatchAffectations}
           onClose={() => catalog.setAssigningChantier(null)}
         />
       )}

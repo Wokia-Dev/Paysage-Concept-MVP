@@ -48,9 +48,14 @@ export function readChantiersBundle(): string {
     'src/pages/Chantiers.tsx',
     'src/hooks/useChantiersCatalog.ts',
     'src/lib/chantiersService.ts',
+    'src/lib/affectationsUtils.ts',
     'src/components/chantiers/ChantierCard.tsx',
     'src/components/chantiers/ChantierFormModal.tsx',
     'src/components/chantiers/ChantierAssignModal.tsx',
+    'src/components/chantiers/ChantierAffectationManager.tsx',
+    'src/components/chantiers/AffectationPeriodTab.tsx',
+    'src/components/chantiers/AffectationDailyTab.tsx',
+    'src/components/chantiers/AffectationWorkerRowContent.tsx',
     'src/lib/formatters.ts',
   ]);
 }
@@ -60,9 +65,14 @@ export function readChantierDetailBundle(): string {
     'src/pages/ChantierDetail.tsx',
     'src/hooks/useChantierDetail.ts',
     'src/lib/chantiersService.ts',
+    'src/lib/affectationsUtils.ts',
     'src/components/chantiers/ChantierTeamSection.tsx',
     'src/components/chantiers/ChantierDocumentsSection.tsx',
     'src/components/chantiers/ChantierSupervisorPanel.tsx',
+    'src/components/chantiers/ChantierAffectationManager.tsx',
+    'src/components/chantiers/AffectationPeriodTab.tsx',
+    'src/components/chantiers/AffectationDailyTab.tsx',
+    'src/components/chantiers/AffectationWorkerRowContent.tsx',
     'src/lib/formatters.ts',
   ]);
 }

@@ -1,4 +1,5 @@
-import { db, ensureSeedData } from './db.ts';
+import type { Table } from 'dexie';
+import { db } from './db.ts';
 import { supabase } from './supabase.ts';
 import type { PointageLocal } from '../types/database';
 import { normalizeTimeString } from './hours.ts';
@@ -49,14 +50,10 @@ class SyncEngine {
         this.triggerSync().catch(() => {});
         this.pullRemoteData().catch(() => {});
       });
-      // Initialise le seed si nécessaire et récupère les données fraîches de Supabase
-      ensureSeedData()
-        .then(() => {
-          if (navigator.onLine) {
-            this.pullRemoteData().catch(() => {});
-          }
-        })
-        .catch(console.error);
+      // Récupère les données fraîches de Supabase si en ligne (sans injecter de données démo)
+      if (navigator.onLine) {
+        this.pullRemoteData().catch(() => {});
+      }
     }
   }
 
@@ -255,6 +252,28 @@ class SyncEngine {
   }
 
   /**
+   * Réconcilie une table locale Dexie avec l'état autoritaire reçu de Supabase,
+   * en supprimant les enregistrements locaux qui n'existent plus sur le serveur.
+   */
+  private async reconcileTable<T extends { id: string }>(
+    table: Table<T, string>,
+    remoteRows: T[],
+    preserveIds?: Set<string>
+  ): Promise<void> {
+    const remoteIdSet = new Set(remoteRows.map((row) => row.id));
+    const localKeys = await table.toCollection().primaryKeys();
+    const staleIds = localKeys.filter(
+      (id) => !remoteIdSet.has(id) && (!preserveIds || !preserveIds.has(id))
+    );
+    if (staleIds.length > 0) {
+      await table.bulkDelete(staleIds);
+    }
+    if (remoteRows.length > 0) {
+      await table.bulkPut(remoteRows);
+    }
+  }
+
+  /**
    * Récupère TOUTES les données distantes depuis Supabase
    * (chantiers, profils, affectations et pointages) et réconcilie Dexie sans écraser les brouillons locaux.
    */
@@ -262,13 +281,20 @@ class SyncEngine {
     if (typeof navigator !== 'undefined' && !navigator.onLine) return;
 
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      // En mode démo locale ou sans session Supabase authentifiée, ne pas écraser les données locales
+      if (!session?.user) return;
+
       // 1. Chantiers
       const { data: remoteChantiers, error: chantiersErr } = await supabase
         .from('chantiers')
         .select('*');
 
-      if (!chantiersErr && remoteChantiers && remoteChantiers.length > 0) {
-        await db.chantiers.bulkPut(remoteChantiers);
+      if (!chantiersErr && Array.isArray(remoteChantiers)) {
+        await this.reconcileTable(db.chantiers, remoteChantiers);
       }
 
       // 2. Profils
@@ -276,8 +302,8 @@ class SyncEngine {
         .from('profiles')
         .select('*');
 
-      if (!profilesErr && remoteProfiles && remoteProfiles.length > 0) {
-        await db.profiles.bulkPut(remoteProfiles);
+      if (!profilesErr && Array.isArray(remoteProfiles)) {
+        await this.reconcileTable(db.profiles, remoteProfiles, new Set([session.user.id]));
       }
 
       // 3. Affectations
@@ -285,8 +311,8 @@ class SyncEngine {
         .from('affectations')
         .select('*');
 
-      if (!affsErr && remoteAffs && remoteAffs.length > 0) {
-        await db.affectations.bulkPut(remoteAffs);
+      if (!affsErr && Array.isArray(remoteAffs)) {
+        await this.reconcileTable(db.affectations, remoteAffs);
       }
 
       // 4. Pointages déclaratifs distants (triés par date décroissante)
@@ -296,7 +322,17 @@ class SyncEngine {
         .order('date', { ascending: false })
         .limit(300);
 
-      if (!pointagesErr && remotePointages && remotePointages.length > 0) {
+      if (!pointagesErr && Array.isArray(remotePointages)) {
+        if (remotePointages.length < 300) {
+          const remotePtIds = new Set(remotePointages.map((rp) => rp.id));
+          const syncedLocalIds = (await db.pointages.toArray())
+            .filter((pt) => pt.synced && !remotePtIds.has(pt.id))
+            .map((pt) => pt.id);
+          if (syncedLocalIds.length > 0) {
+            await db.pointages.bulkDelete(syncedLocalIds);
+          }
+        }
+
         for (const rp of remotePointages) {
           const local = await db.pointages
             .where('[profile_id+date]')

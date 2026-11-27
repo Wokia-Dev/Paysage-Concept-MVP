@@ -4,7 +4,7 @@ import { useAuth } from '../context/useAuth';
 import { supabase } from '../lib/supabase';
 import { db } from '../lib/db';
 import type { UserRole, Profile } from '../types/database';
-import { DemoAccountsPanel } from '../components/auth/DemoAccountsPanel';
+import { DemoAccountsPanel, type QuickAuthMode } from '../components/auth/DemoAccountsPanel';
 import { ThemeSelector } from '../components/common/ThemeSelector';
 import logoUrl from '../assets/logo.png';
 import {
@@ -31,6 +31,14 @@ export function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
+  const [quickAuthMode, setQuickAuthMode] = useState<QuickAuthMode>(() =>
+    typeof navigator !== 'undefined' && !navigator.onLine ? 'demo' : 'supabase'
+  );
+  const [demoFallbackCandidate, setDemoFallbackCandidate] = useState<{
+    roleToUse: 'ouvrier' | 'chef_equipe';
+    specificProfileId?: string;
+    label: string;
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,10 +127,33 @@ export function Login() {
   const handleDemoClick = async (
     roleToUse: 'ouvrier' | 'chef_equipe',
     specificProfileId?: string,
-    specificEmail?: string
+    specificEmail?: string,
+    displayName?: string
   ) => {
     setLoading(true);
     setError(null);
+    setSuccessNotice(null);
+    setDemoFallbackCandidate(null);
+
+    if (quickAuthMode === 'demo') {
+      await loginDemo(roleToUse, specificProfileId);
+      setLoading(false);
+      navigate('/', { replace: true });
+      return;
+    }
+
+    const label =
+      displayName || (roleToUse === 'chef_equipe' ? 'Marc Vasseur' : 'Jean Dupont');
+    const currentlyOnline = typeof navigator !== 'undefined' ? navigator.onLine : isOnline;
+
+    if (!currentlyOnline) {
+      setError(
+        'Connexion réseau indisponible pour authentifier ce compte Supabase.'
+      );
+      setDemoFallbackCandidate({ roleToUse, specificProfileId, label });
+      setLoading(false);
+      return;
+    }
 
     const demoEmail =
       specificEmail ||
@@ -131,18 +162,25 @@ export function Login() {
         : 'marc.vasseur@paysageconcept.fr');
     const demoPassword = 'Paysage2026!';
 
-    // Si en ligne, tenter d'abord une vraie authentification Supabase avec JWT
-    if (isOnline) {
-      const res = await login(demoEmail, demoPassword);
-      if (res.success) {
-        setLoading(false);
-        navigate('/', { replace: true });
-        return;
-      }
+    const res = await login(demoEmail, demoPassword);
+    setLoading(false);
+
+    if (res.success) {
+      navigate('/', { replace: true });
+      return;
     }
 
-    // Repli immédiat sur le profil local Dexie (mode hors-ligne ou pré-confirmation)
-    await loginDemo(roleToUse, specificProfileId);
+    setError(
+      `Échec de connexion Supabase pour ${label} : ${res.error || 'identifiants ou réseau invalides'}.`
+    );
+    setDemoFallbackCandidate({ roleToUse, specificProfileId, label });
+  };
+
+  const handleConfirmDemoFallback = async () => {
+    if (!demoFallbackCandidate) return;
+    setLoading(true);
+    setError(null);
+    await loginDemo(demoFallbackCandidate.roleToUse, demoFallbackCandidate.specificProfileId);
     setLoading(false);
     navigate('/', { replace: true });
   };
@@ -211,8 +249,18 @@ export function Login() {
 
         {/* Message d'erreur */}
         {error && (
-          <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 dark:bg-rose-950/75 dark:border-rose-700/60 dark:text-rose-200 leading-relaxed animate-in fade-in duration-200">
-            {error}
+          <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 dark:bg-rose-950/75 dark:border-rose-700/60 dark:text-rose-200 leading-relaxed space-y-2 animate-in fade-in duration-200">
+            <p>{error}</p>
+            {demoFallbackCandidate && (
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => void handleConfirmDemoFallback()}
+                className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-white dark:bg-[#172322] border border-red-300 dark:border-rose-700/60 text-foret dark:text-[#EDF2F0] font-bold text-xs hover:bg-craie dark:hover:bg-[#1E2E2C] transition-all cursor-pointer"
+              >
+                Continuer en Démo locale ({demoFallbackCandidate.label})
+              </button>
+            )}
           </div>
         )}
 
@@ -317,8 +365,18 @@ export function Login() {
           </button>
         </form>
 
-        {/* Comptes démo */}
-        <DemoAccountsPanel loading={loading} onDemoClick={handleDemoClick} />
+        {/* Comptes accès rapide */}
+        <DemoAccountsPanel
+          loading={loading}
+          isOnline={isOnline}
+          quickAuthMode={quickAuthMode}
+          onChangeQuickAuthMode={(nextMode) => {
+            setQuickAuthMode(nextMode);
+            setError(null);
+            setDemoFallbackCandidate(null);
+          }}
+          onDemoClick={handleDemoClick}
+        />
 
         {!isOnline && (
           <p className="text-center text-[11px] text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200 dark:text-amber-300 dark:bg-amber-950/70 dark:border-amber-700/60">

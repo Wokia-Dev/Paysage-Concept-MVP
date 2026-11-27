@@ -2,11 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { db, getTodayDateString } from '../lib/db';
 import { syncEngine } from '../lib/sync';
 import {
+  applyBatchAffectations,
   createChantier,
   toggleWorkerAffectation,
   updateChantier,
+  type BatchAffectationPayload,
   type ChantierFormInput,
 } from '../lib/chantiersService';
+import { formatBatchAffectationFeedback } from '../lib/affectationsUtils';
 import type { Affectation, Chantier, ChantierStatut, Profile } from '../types/database';
 
 function getDefaultCreateForm(): ChantierFormInput {
@@ -196,6 +199,23 @@ export function useChantiersCatalog() {
     await loadData();
   };
 
+  const handleApplyBatchAffectations = async (
+    payload: BatchAffectationPayload
+  ): Promise<boolean> => {
+    const res = await applyBatchAffectations(payload);
+    if (!res.ok) {
+      showFeedback(res.error || "Erreur lors de la mise à jour des affectations", 'error');
+      return false;
+    }
+
+    const added = res.data?.addedCount ?? 0;
+    const removed = res.data?.removedCount ?? 0;
+    showFeedback(formatBatchAffectationFeedback(added, removed), 'success');
+
+    await loadData();
+    return true;
+  };
+
   return {
     chantiers,
     profiles,
@@ -225,5 +245,6 @@ export function useChantiersCatalog() {
     handleOpenEdit,
     handleUpdateChantier,
     handleToggleWorker,
+    handleApplyBatchAffectations,
   };
 }

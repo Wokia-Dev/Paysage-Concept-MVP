@@ -34,10 +34,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function initAuth() {
       try {
-        await ensureSeedData();
-
         const wasDemo = localStorage.getItem(LOCAL_STORAGE_IS_DEMO_KEY) === 'true';
         setIsDemo(wasDemo);
+
+        // Le jeu de données démo n'est injecté qu'en mode Démo explicite
+        if (wasDemo) {
+          await ensureSeedData();
+        }
 
         // 1. Restaurer immédiatement le profil local (mode offline-first instantané)
         const savedProfileId = localStorage.getItem(LOCAL_STORAGE_ACTIVE_PROFILE_KEY);
@@ -84,10 +87,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuth();
   }, []);
 
-  // Connexion standard Supabase
+  // Connexion standard Supabase (ne modifie pas le `loading` global d'init pour éviter de démonter Login en cas d'erreur)
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      setLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -118,8 +120,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem(LOCAL_STORAGE_IS_DEMO_KEY);
         setIsDemo(false);
         setProfile(userProfile);
-        // Téléchargement immédiat de tous les chantiers, affectations et pointages de Supabase
-        syncEngine.pullRemoteData().catch(console.error);
+        // Téléchargement immédiat et réconciliation de tous les chantiers, affectations et pointages de Supabase
+        await syncEngine.pullRemoteData().catch(console.error);
         return { success: true };
       }
 
@@ -129,14 +131,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         success: false,
         error: err instanceof Error ? err.message : 'Erreur inconnue',
       };
-    } finally {
-      setLoading(false);
     }
   };
 
   // Connexion rapide démo (pour tests instantanés ouvrier / chef d'équipe)
   const loginDemo = async (targetRole: UserRole, targetId?: string): Promise<void> => {
-    setLoading(true);
     await ensureSeedData();
 
     const matched = targetId
@@ -147,7 +146,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(LOCAL_STORAGE_IS_DEMO_KEY, 'true');
     setIsDemo(true);
     setProfile(matched);
-    setLoading(false);
   };
 
   const logout = async () => {

@@ -1,14 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { db, getTodayDateString } from '../lib/db';
 import { syncEngine } from '../lib/sync';
-import { toggleWorkerAffectation, updateChantierStatut } from '../lib/chantiersService';
+import {
+  applyBatchAffectations,
+  toggleWorkerAffectation,
+  updateChantierStatut,
+  type BatchAffectationPayload,
+} from '../lib/chantiersService';
+import { formatBatchAffectationFeedback } from '../lib/affectationsUtils';
 import type { Affectation, Chantier, ChantierStatut, Profile } from '../types/database';
 
 export function useChantierDetail(id: string | undefined, profile: Profile | null) {
   const [chantier, setChantier] = useState<Chantier | null>(null);
+  const [allChantiers, setAllChantiers] = useState<Chantier[]>([]);
   const [teamMembers, setTeamMembers] = useState<Profile[]>([]);
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   const [affectations, setAffectations] = useState<Affectation[]>([]);
+  const [allAffectations, setAllAffectations] = useState<Affectation[]>([]);
   const [targetDate, setTargetDate] = useState<string>(() => getTodayDateString(0));
   const [loading, setLoading] = useState(true);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
@@ -44,18 +52,23 @@ export function useChantierDetail(id: string | undefined, profile: Profile | nul
       return;
     }
     try {
-      const [found, allAffs, allProfs] = await Promise.all([
+      const [found, globalAffs, allProfs, globalChantiers] = await Promise.all([
         db.chantiers.get(id),
-        db.affectations.where('chantier_id').equals(id).toArray(),
+        db.affectations.toArray(),
         db.profiles.toArray(),
+        db.chantiers.toArray(),
       ]);
 
+      setAllChantiers(globalChantiers);
+      setAllAffectations(globalAffs);
+
       if (found) {
+        const chantierAffs = globalAffs.filter((a) => a.chantier_id === id);
         setChantier(found);
-        setAffectations(allAffs);
+        setAffectations(chantierAffs);
         setAllProfiles(allProfs);
 
-        const dayAffs = allAffs.filter((a) => a.date_intervention === targetDate);
+        const dayAffs = chantierAffs.filter((a) => a.date_intervention === targetDate);
         const profileIds = Array.from(new Set(dayAffs.map((a) => a.profile_id)));
         const activeMembers = allProfs.filter((p) => profileIds.includes(p.id));
         setTeamMembers(activeMembers);
@@ -130,6 +143,23 @@ export function useChantierDetail(id: string | undefined, profile: Profile | nul
     await refreshChantierData();
   };
 
+  const handleApplyBatchAffectations = async (
+    payload: BatchAffectationPayload
+  ): Promise<boolean> => {
+    const res = await applyBatchAffectations(payload);
+    if (!res.ok) {
+      showFeedback(res.error || "Erreur lors de la mise à jour des affectations", 'error');
+      return false;
+    }
+
+    const added = res.data?.addedCount ?? 0;
+    const removed = res.data?.removedCount ?? 0;
+    showFeedback(formatBatchAffectationFeedback(added, removed), 'success');
+
+    await refreshChantierData();
+    return true;
+  };
+
   const assignedWorkerIdsForDate = useMemo(
     () => affectations.filter((a) => a.date_intervention === targetDate).map((a) => a.profile_id),
     [affectations, targetDate]
@@ -142,8 +172,10 @@ export function useChantierDetail(id: string | undefined, profile: Profile | nul
 
   return {
     chantier,
+    allChantiers,
     teamMembers,
     allProfiles,
+    allAffectations,
     targetDate,
     setTargetDate,
     loading,
@@ -154,5 +186,6 @@ export function useChantierDetail(id: string | undefined, profile: Profile | nul
     assignedWorkerIdsForDate,
     handleStatutChange,
     handleToggleWorker,
+    handleApplyBatchAffectations,
   };
 }

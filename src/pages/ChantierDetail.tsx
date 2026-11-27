@@ -214,13 +214,16 @@ export function ChantierDetail() {
       {/* Espace Superviseur */}
       {detail.isSupervisor && (
         <ChantierSupervisorPanel
+          chantier={chantier}
+          allChantiers={detail.allChantiers}
           statut={chantier.statut}
           targetDate={detail.targetDate}
           allProfiles={detail.allProfiles}
-          assignedWorkerIdsForDate={detail.assignedWorkerIdsForDate}
+          allAffectations={detail.allAffectations}
           onStatutChange={detail.handleStatutChange}
           onDateChange={detail.setTargetDate}
           onToggleWorker={detail.handleToggleWorker}
+          onApplyBatch={detail.handleApplyBatchAffectations}
         />
       )}
     </div>
