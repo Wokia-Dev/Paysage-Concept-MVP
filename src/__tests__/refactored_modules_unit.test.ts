@@ -25,6 +25,8 @@ import {
   buildChantierNameMap,
   computeAnalyticsMetrics,
   computeAnalyticsPeriod,
+  computePeriodTargetHours,
+  countWorkdaysInPeriod,
   shiftAnalyticsRefDate,
 } from '../lib/hoursAnalytics.ts';
 import {
@@ -195,6 +197,42 @@ describe('Refactored Pure Modules & Services Unit Tests', () => {
       assert.equal(emptyPt.hasSubmitted, false);
       assert.equal(emptyPt.tot, 0);
       assert.equal(emptyPt.chantierName, 'Aucun chantier spécifié');
+    });
+
+    it('computes period target hours from workdays (Mon-Fri) for week and month views', () => {
+      // Standard 7-day week -> 5 workdays -> 5 * 7h = 35h
+      const week = computeAnalyticsPeriod('week', '2026-11-27', '2026-11-27');
+      assert.equal(countWorkdaysInPeriod(week.daysList), 5);
+      assert.deepEqual(computePeriodTargetHours(week.daysList, 7), {
+        workdaysCount: 5,
+        targetHours: 35,
+      });
+      assert.deepEqual(computePeriodTargetHours(week.daysList, 8.5), {
+        workdaysCount: 5,
+        targetHours: 42.5,
+      });
+
+      // November 2026: 30 days, 21 Mon-Fri workdays -> 21 * 7h = 147h
+      const nov2026 = computeAnalyticsPeriod('month', '2026-11-27', '2026-11-27');
+      assert.equal(countWorkdaysInPeriod(nov2026.daysList), 21);
+      assert.deepEqual(computePeriodTargetHours(nov2026.daysList, 7), {
+        workdaysCount: 21,
+        targetHours: 147,
+      });
+
+      // February 2024 (leap year, starts Thursday 1st, 29 days -> 21 Mon-Fri workdays)
+      const feb2024 = computeAnalyticsPeriod('month', '2024-02-15', '2026-11-27');
+      assert.equal(countWorkdaysInPeriod(feb2024.daysList), 21);
+
+      // Guard against non-finite or negative target
+      assert.deepEqual(computePeriodTargetHours(week.daysList, Number.NaN), {
+        workdaysCount: 5,
+        targetHours: 0,
+      });
+      assert.deepEqual(computePeriodTargetHours(week.daysList, -2), {
+        workdaysCount: 5,
+        targetHours: 0,
+      });
     });
   });
 

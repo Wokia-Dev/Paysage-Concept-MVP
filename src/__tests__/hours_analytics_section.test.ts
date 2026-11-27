@@ -72,9 +72,13 @@ describe('Hours Analytics & History Section (R3 & R4 Enhancement)', () => {
       assert.match(content, /text-terracotta/);
     });
 
-    it('displays summary card for total break duration', () => {
-      assert.match(content, /Total pauses/);
-      assert.match(content, /formatHours\(metrics\.totalPause\)/);
+    it('displays summary card for period target hours instead of total pauses', () => {
+      const sectionContent = readFileSync(componentPath, 'utf-8');
+      assert.doesNotMatch(sectionContent, /Total pauses/);
+      assert.match(content, /Objectif/);
+      assert.match(content, /computePeriodTargetHours/);
+      assert.match(content, /formatHours\(periodTarget\.targetHours\)/);
+      assert.match(content, /periodTarget\.workdaysCount/);
     });
   });
 

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { BarChart3, ChevronLeft, ChevronRight, Clock, Sparkles, TrendingUp } from 'lucide-react';
+import { BarChart3, ChevronLeft, ChevronRight, Clock, Target, TrendingUp } from 'lucide-react';
 import type { Chantier, PointageLocal } from '../../types/database';
 import { formatHours } from '../../lib/hours';
 import { getTodayDateString } from '../../lib/dates';
@@ -8,6 +8,7 @@ import {
   buildChantierNameMap,
   computeAnalyticsMetrics,
   computeAnalyticsPeriod,
+  computePeriodTargetHours,
   shiftAnalyticsRefDate,
   type PeriodMode,
 } from '../../lib/hoursAnalytics';
@@ -84,6 +85,10 @@ export const HoursAnalyticsSection: React.FC<HoursAnalyticsSectionProps> = ({
   }, [pointages, startDateStr, endDateStr]);
 
   const metrics = useMemo(() => computeAnalyticsMetrics(periodPointages), [periodPointages]);
+  const periodTarget = useMemo(
+    () => computePeriodTargetHours(daysList, dailyTarget),
+    [daysList, dailyTarget]
+  );
 
   const activeDayData = useMemo(
     () => buildActiveDayData(activeChartDate, pointageByDate, daysList, chantierMap),
@@ -235,15 +240,17 @@ export const HoursAnalyticsSection: React.FC<HoursAnalyticsSectionProps> = ({
         <div className="bg-craie dark:bg-[#1E2E2C] rounded-2xl p-3 border border-sable/80 dark:border-[#304744] shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-sauge dark:text-[#9BB89B]">
-              Total pauses
+              Objectif
             </span>
-            <Sparkles className="w-3.5 h-3.5 text-sauge dark:text-[#9BB89B]" />
+            <Target className="w-3.5 h-3.5 text-foret dark:text-[#9BB89B]" />
           </div>
           <div className="mt-2">
-            <span className="text-lg sm:text-xl font-black text-foret/80 dark:text-[#EDF2F0] block leading-none">
-              {formatHours(metrics.totalPause)}
+            <span className="text-lg sm:text-xl font-black text-foret dark:text-[#EDF2F0] block leading-none">
+              {formatHours(periodTarget.targetHours)}
             </span>
-            <span className="text-[10px] text-sauge dark:text-[#9BB89B] font-medium mt-1 block">Temps de pause</span>
+            <span className="text-[10px] text-sauge dark:text-[#9BB89B] font-medium mt-1 block">
+              {periodTarget.workdaysCount} j ouvrés × {formatHours(dailyTarget)}
+            </span>
           </div>
         </div>
       </div>

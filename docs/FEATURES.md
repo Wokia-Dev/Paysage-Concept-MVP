@@ -57,7 +57,7 @@ Ce document recense l'ensemble des fonctionnalités actives de la V1 devant imp�
 - **Suivi de l'équipe** (superviseurs sur `Home`) : nombre d'équipiers déclarés (`X / Y déclarés`), total équipe (normales + sup) et liste nominative par date sélectionnée.
 - **Section Analyse & Historique (`HoursAnalyticsSection`)** :
   - Bascule `Semaine | Mois` et navigation temporelle (`<`, `>`, `Aujourd'hui`).
-  - 3 cartes KPI : Total travaillé (et jours déclarés), Heures sup, Total pauses.
+  - 3 cartes KPI : Total travaillé (et jours déclarés), Heures sup, Objectif de période (jours ouvrés × objectif journalier).
   - Graphique SVG interactif à barres empilées (Vert Forêt = normales, Terracotta = heures sup) avec ligne pointillée de l'objectif journalier. Clic sur une barre pour inspecter le jour et bouton `Modifier` / `Saisir` ouvrant directement la modale sur cette date.
   - Registre déroulant des déclarations de la période (`Afficher tout` / `Réduire` au-delà de 3 éléments) avec statut `Synchronisé` / `En attente`.
 

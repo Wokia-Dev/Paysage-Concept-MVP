@@ -193,6 +193,34 @@ export function computeAnalyticsMetrics(periodPointages: PointageLocal[]): Analy
 }
 
 /**
+ * Compte le nombre de jours ouvrés (lundi à vendredi) dans une liste de jours de période.
+ */
+export function countWorkdaysInPeriod(daysList: AnalyticsDayItem[]): number {
+  let count = 0;
+  for (const day of daysList) {
+    const utcDay = parseMiddayUTC(day.dateStr).getUTCDay();
+    if (utcDay >= 1 && utcDay <= 5) {
+      count++;
+    }
+  }
+  return count;
+}
+
+/**
+ * Calcule l'objectif d'heures cumulé sur une période :
+ * nombre de jours ouvrés (Lun–Ven) × objectif journalier.
+ */
+export function computePeriodTargetHours(
+  daysList: AnalyticsDayItem[],
+  dailyTarget: number
+): { workdaysCount: number; targetHours: number } {
+  const safeTarget = Number.isFinite(dailyTarget) ? Math.max(0, dailyTarget) : 0;
+  const workdaysCount = countWorkdaysInPeriod(daysList);
+  const targetHours = Math.round(workdaysCount * safeTarget * 100) / 100;
+  return { workdaysCount, targetHours };
+}
+
+/**
  * Construit les détails d'inspection pour un jour sélectionné sur le graphique.
  */
 export function buildActiveDayData(
