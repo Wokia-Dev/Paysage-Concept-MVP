@@ -19,6 +19,7 @@ import {
   type ViewMode,
 } from '../lib/planningUtils';
 import type { Affectation, Chantier, Profile } from '../types/database';
+import { isSupervisorRole } from '../lib/formatters';
 
 export type { ViewMode, DayItem, MonthGridDay, PlanningMission };
 
@@ -70,7 +71,7 @@ export function usePlanningData(profile: Profile | null) {
 
   const targetFilterProfileId = useMemo(() => {
     if (!profile) return null;
-    if (profile.role === 'ouvrier') return profile.id;
+    if (!isSupervisorRole(profile.role)) return profile.id;
     if (supervisorFilter === 'mine') return profile.id;
     if (supervisorFilter === 'all') return null;
     return supervisorFilter;

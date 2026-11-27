@@ -20,6 +20,7 @@ import {
   type WorkerDailyStatus,
 } from '../lib/hours';
 import type { Chantier, PointageLocal, Profile } from '../types/database';
+import { isSupervisorRole } from '../lib/formatters';
 
 export interface TeamSummaryMetrics {
   totalTeamHours: number;
@@ -125,7 +126,7 @@ export function useHomeDashboard(profile: Profile | null) {
       if (existingPt?.chantier_id) {
         const matched = chantiersData.find((c) => c.id === existingPt.chantier_id);
         if (matched) setSelectedChantier(matched);
-      } else if (profile.role === 'ouvrier') {
+      } else if (!isSupervisorRole(profile.role)) {
         setSelectedChantier((prev) =>
           prev && myChantiers.some((c) => c.id === prev.id) ? prev : myChantiers[0] || null
         );
@@ -175,7 +176,7 @@ export function useHomeDashboard(profile: Profile | null) {
         lastFormKeyRef.current = formKey;
       }
 
-      if (profile.role === 'chef_equipe' || profile.role === 'admin') {
+      if (isSupervisorRole(profile.role)) {
         const teamWorkers = allProfilesData.filter((p) => p.id !== profile.id);
         const agg = aggregateTeamDailyStatus(allDayPts, teamWorkers, selectedDateStr);
         setTeamStatuses(agg.statuses);
@@ -380,12 +381,12 @@ export function useHomeDashboard(profile: Profile | null) {
   const activePause = hasSubmittedToday ? Number(todayPointage.temps_pause) || 0 : 0;
   const activeNormal = calculateNormalHours(activeHours, activeSup);
 
-  // Chantiers sélectionnables : strict pour ouvrier (uniquement ses affectations)
-  const availableChantiers = profile?.role === 'ouvrier' ? assignedChantiers : allChantiers;
+  // Chantiers sélectionnables : strict pour les profils terrain (uniquement leurs affectations)
+  const availableChantiers = !isSupervisorRole(profile?.role) ? assignedChantiers : allChantiers;
   const activeHeroChantier =
     selectedChantier ||
     availableChantiers[0] ||
-    (profile?.role === 'ouvrier' ? null : allChantiers[0]) ||
+    (!isSupervisorRole(profile?.role) ? null : allChantiers[0]) ||
     null;
 
   return {

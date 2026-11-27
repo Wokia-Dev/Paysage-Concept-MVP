@@ -372,15 +372,6 @@ describe('Empirical Adversarial Stress Harness: Milestone 4 (Challenger 1)', () 
         messages: [],
       },
       {
-        id: 'direction',
-        title: 'Direction & Sécurité',
-        category: 'direction',
-        subtitle: 'Consignes canicule',
-        time: 'Lun',
-        unreadCount: 0,
-        messages: [],
-      },
-      {
         id: 'beauvallon',
         title: 'Domaine de Beauvallon',
         category: 'chantier',
@@ -408,10 +399,9 @@ describe('Empirical Adversarial Stress Harness: Milestone 4 (Challenger 1)', () 
     };
 
     it('correctly filters channels by category', () => {
-      assert.equal(filterFunction(mockChannels, 'tous', '').length, 5);
+      assert.equal(filterFunction(mockChannels, 'tous', '').length, 4);
       assert.equal(filterFunction(mockChannels, 'equipe', '').length, 1);
       assert.equal(filterFunction(mockChannels, 'chantier', '').length, 3);
-      assert.equal(filterFunction(mockChannels, 'direction', '').length, 1);
     });
 
     it('correctly filters channels by search query (case-insensitive & trimmed)', () => {
@@ -420,7 +410,7 @@ describe('Empirical Adversarial Stress Harness: Milestone 4 (Challenger 1)', () 
       assert.equal(filterFunction(mockChannels, 'tous', '  VILLA  ').length, 1);
       // By subtitle
       assert.equal(filterFunction(mockChannels, 'tous', 'terreau').length, 1);
-      assert.equal(filterFunction(mockChannels, 'tous', 'canicule').length, 1);
+      assert.equal(filterFunction(mockChannels, 'tous', 'gazon').length, 1);
       // Non-matching
       assert.equal(filterFunction(mockChannels, 'tous', 'inexistant').length, 0);
     });

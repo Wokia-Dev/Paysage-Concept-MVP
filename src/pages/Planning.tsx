@@ -1,6 +1,7 @@
 import { ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { usePlanningData } from '../hooks/usePlanningData';
+import { getRoleLabel, isSupervisorRole } from '../lib/formatters';
 import { PlanningDayView } from '../components/planning/PlanningDayView';
 import { PlanningWeekView } from '../components/planning/PlanningWeekView';
 import { PlanningMonthView } from '../components/planning/PlanningMonthView';
@@ -9,7 +10,7 @@ import { MemberContactModal } from '../components/planning/MemberContactModal';
 export function Planning() {
   const { profile } = useAuth();
   const planning = usePlanningData(profile);
-  const isSupervisor = profile?.role === 'chef_equipe' || profile?.role === 'admin';
+  const isSupervisor = isSupervisorRole(profile?.role);
 
   return (
     <div className="space-y-4">
@@ -18,7 +19,7 @@ export function Planning() {
         <div>
           <h1 className="text-xl font-extrabold text-foret dark:text-[#EDF2F0]">Planning</h1>
           <p className="text-xs text-sauge dark:text-[#9BB89B]">
-            {profile?.role === 'ouvrier'
+            {!isSupervisor
               ? 'Vos missions personnelles planifiées'
               : "Missions et planning d'équipe"}
           </p>
@@ -89,10 +90,9 @@ export function Planning() {
                 {planning.profiles
                   .filter((p) => p.id !== profile.id)
                   .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      Planning de : {p.prenom} {p.nom} (
-                      {p.role === 'chef_equipe' ? 'Chef' : 'Ouvrier'})
-                    </option>
+                      <option key={p.id} value={p.id}>
+                        Planning de : {p.prenom} {p.nom} ({getRoleLabel(p.role, 'short')})
+                      </option>
                   ))}
               </optgroup>
             </select>

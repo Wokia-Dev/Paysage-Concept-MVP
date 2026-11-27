@@ -1,4 +1,4 @@
-export type ChannelCategory = 'equipe' | 'chantier' | 'direction';
+export type ChannelCategory = 'equipe' | 'chantier';
 
 export type FilterCategory = 'tous' | ChannelCategory;
 

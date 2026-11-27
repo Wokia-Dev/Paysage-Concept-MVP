@@ -153,8 +153,8 @@ describe('Milestone 2: Home Dashboard & Declarative Time-Tracking (R3 & R4)', ()
       assert.doesNotMatch(homeContent, /HISTORIQUE DES DÉCLARATIONS/);
     });
 
-    it('renders supervisor team presence summary for chef_equipe and admin', () => {
-      assert.match(homeContent, /profile\?\.role === 'chef_equipe'/);
+    it('renders supervisor team presence summary for supervisors', () => {
+      assert.match(homeContent, /isSupervisor\s*=\s*isSupervisorRole\(profile\?\.role\)/);
       assert.match(homeContent, /Suivi de l'équipe/);
       assert.match(homeContent, /teamSummary/);
     });

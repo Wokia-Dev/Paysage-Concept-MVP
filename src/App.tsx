@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useAuth } from './context/useAuth';
+import { isSupervisorRole } from './lib/formatters';
 import { AppLayout } from './components/layout/AppLayout';
 import { Home } from './pages/Home';
 import { Loader2 } from 'lucide-react';
@@ -65,7 +66,7 @@ function PublicRoute({ children }: { children: ReactNode }) {
 function SupervisorRoute({ children }: { children: ReactNode }) {
   const { profile } = useAuth();
 
-  if (profile?.role === 'ouvrier') {
+  if (!isSupervisorRole(profile?.role)) {
     return <Navigate to="/" replace />;
   }
 

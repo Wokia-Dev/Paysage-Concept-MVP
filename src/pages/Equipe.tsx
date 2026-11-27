@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { db, getTodayDateString } from '../lib/db';
+import { getRoleBadgeConfig } from '../lib/formatters';
 import type { Profile, Chantier, Affectation, UserRole } from '../types/database';
 import {
   Phone,
   MessageSquare,
   MapPin,
-  User,
+  GraduationCap,
+  BookOpen,
   ShieldCheck,
   Wrench,
   Search,
@@ -51,27 +53,32 @@ export function Equipe() {
   };
 
   const getRoleBadge = (role: UserRole) => {
+    const config = getRoleBadgeConfig(role);
     switch (role) {
       case 'chef_equipe':
-        return {
-          label: "Chef d'équipe",
-          icon: ShieldCheck,
-          color:
-            'bg-amber-100/90 text-amber-950 border-amber-300 dark:bg-amber-950/75 dark:text-amber-300 dark:border-amber-700/60',
-        };
       case 'admin':
         return {
-          label: 'Direction / Conducteur',
-          icon: User,
-          color:
-            'bg-indigo-100/90 text-indigo-950 border-indigo-300 dark:bg-indigo-950/75 dark:text-indigo-300 dark:border-indigo-700/60',
+          label: config.label,
+          icon: ShieldCheck,
+          color: config.className,
+        };
+      case 'apprenti':
+        return {
+          label: config.label,
+          icon: GraduationCap,
+          color: config.className,
+        };
+      case 'stagiaire':
+        return {
+          label: config.label,
+          icon: BookOpen,
+          color: config.className,
         };
       default:
         return {
-          label: 'Ouvrier paysagiste',
+          label: config.label,
           icon: Wrench,
-          color:
-            'bg-emerald-100/90 text-emerald-950 border-emerald-300 dark:bg-emerald-950/75 dark:text-emerald-300 dark:border-emerald-700/60',
+          color: config.className,
         };
     }
   };
@@ -122,7 +129,8 @@ export function Equipe() {
             { id: 'all', label: 'Tous' },
             { id: 'chef_equipe', label: "Chefs d'équipe" },
             { id: 'ouvrier', label: 'Ouvriers' },
-            { id: 'admin', label: 'Direction' },
+            { id: 'apprenti', label: 'Apprentis' },
+            { id: 'stagiaire', label: 'Stagiaires' },
           ].map((f) => (
             <button
               key={f.id}

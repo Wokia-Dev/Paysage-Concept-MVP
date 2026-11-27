@@ -169,8 +169,8 @@ Le singleton `syncEngine` ([src/lib/sync.ts](file:///home/quent/Work/Perso/Paysa
 - `/` (`ProtectedRoute` -> `AppLayout`) : redirige vers `/login` si `!profile`.
   - `/` (`index`) : `Home` (eager)
   - `/planning` : `Planning` (lazy)
-  - `/chantiers` (`SupervisorRoute`) : `Chantiers` (lazy, redirige `ouvrier` vers `/`)
-  - `/chantier/:id` : `ChantierDetail` (lazy, bloque l'`ouvrier` s'il n'a aucune affectation sur ce chantier)
+  - `/chantiers` (`SupervisorRoute`) : `Chantiers` (lazy, redirige `ouvrier`, `apprenti` et `stagiaire` vers `/`)
+  - `/chantier/:id` : `ChantierDetail` (lazy, bloque `ouvrier`, `apprenti` et `stagiaire` s'ils n'ont aucune affectation sur ce chantier)
   - `/equipe` : `Equipe` (lazy)
   - `/chat` : `ChatPreview` (lazy)
   - `/plus` : `Plus` (lazy)
@@ -208,7 +208,7 @@ Le singleton `syncEngine` ([src/lib/sync.ts](file:///home/quent/Work/Perso/Paysa
 ### Types métier ([src/types/database.ts](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/types/database.ts))
 
 ```ts
-export type UserRole = 'admin' | 'chef_equipe' | 'ouvrier';
+export type UserRole = 'admin' | 'chef_equipe' | 'ouvrier' | 'apprenti' | 'stagiaire';
 export type ChantierStatut = 'en_attente' | 'en_cours' | 'termine';
 
 export interface Profile {
@@ -278,7 +278,7 @@ export interface PointageLocal extends Pointage {
 ### Modèle Chat Mock ([src/types/chat.ts](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/types/chat.ts))
 
 ```ts
-export type ChannelCategory = 'equipe' | 'chantier' | 'direction';
+export type ChannelCategory = 'equipe' | 'chantier';
 export type FilterCategory = 'tous' | ChannelCategory;
 
 export interface ChatMessage {

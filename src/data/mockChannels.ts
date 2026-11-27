@@ -5,7 +5,7 @@ export const INITIAL_CHANNELS: ChatConversation[] = [
     id: 'general',
     title: 'Équipe Paysage Concept',
     category: 'equipe',
-    subtitle: 'Sophie (Admin) : Rappel livraison terreau demain 7h30',
+    subtitle: 'Sophie Vasseur : Rappel livraison terreau demain 7h30',
     time: '08:14',
     unreadCount: 2,
     participantsCount: 8,
@@ -13,7 +13,7 @@ export const INITIAL_CHANNELS: ChatConversation[] = [
       {
         id: 'm1',
         senderId: 'sophie',
-        senderName: 'Sophie Vasseur (Admin)',
+        senderName: 'Sophie Vasseur',
         content:
           'Bonjour à tous ! Petit rappel pour demain : livraison des 15m³ de terreau enrichi directement sur le dépôt à 7h30.',
         timestamp: '08:10',
@@ -102,34 +102,6 @@ export const INITIAL_CHANNELS: ChatConversation[] = [
         content: 'Prévoir une 2ème rotation avec le camion benne avant 17h si possible.',
         timestamp: 'Hier 14:22',
         isOutgoing: false,
-      },
-    ],
-  },
-  {
-    id: 'direction',
-    title: 'Direction & Sécurité',
-    category: 'direction',
-    subtitle: 'Consignes canicule et hydratation chantiers',
-    time: 'Lun',
-    unreadCount: 0,
-    participantsCount: 12,
-    messages: [
-      {
-        id: 'md1',
-        senderId: 'admin',
-        senderName: 'Alexandre (Direction)',
-        content:
-          'Alerte météo : températures supérieures à 32°C annoncées jeudi et vendredi. Pensez aux pauses hydratation régulières toutes les 2 heures et casquettes obligatoires.',
-        timestamp: 'Lun 09:00',
-        isOutgoing: false,
-      },
-      {
-        id: 'md2',
-        senderId: 'user',
-        senderName: 'Moi',
-        content: "Glacières et packs d'eau chargés dans chaque véhicule.",
-        timestamp: 'Lun 09:30',
-        isOutgoing: true,
       },
     ],
   },

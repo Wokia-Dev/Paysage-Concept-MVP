@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { AlertCircle, Briefcase, Building, CheckCircle2, Plus, Search, X } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { getTodayDateString } from '../lib/db';
+import { isSupervisorRole } from '../lib/formatters';
 import { getInitialDailyDateForChantier } from '../lib/affectationsUtils';
 import { useChantiersCatalog } from '../hooks/useChantiersCatalog';
 import { ChantierCard } from '../components/chantiers/ChantierCard';
@@ -13,7 +14,7 @@ export function Chantiers() {
   const catalog = useChantiersCatalog();
   const todayStr = getTodayDateString(0);
 
-  if (profile?.role === 'ouvrier') {
+  if (!isSupervisorRole(profile?.role)) {
     return <Navigate to="/" replace />;
   }
 

@@ -1,5 +1,7 @@
 import React from 'react';
 import { Cloud, HardDrive, ShieldCheck, UserCheck } from 'lucide-react';
+import { getRoleBadgeConfig } from '../../lib/formatters';
+import type { UserRole } from '../../types/database';
 
 export type QuickAuthMode = 'supabase' | 'demo';
 
@@ -9,30 +11,38 @@ interface DemoAccountsPanelProps {
   quickAuthMode: QuickAuthMode;
   onChangeQuickAuthMode: (mode: QuickAuthMode) => void;
   onDemoClick: (
-    roleToUse: 'ouvrier' | 'chef_equipe',
+    roleToUse: 'ouvrier' | 'chef_equipe' | 'apprenti' | 'stagiaire',
     specificProfileId?: string,
     specificEmail?: string,
     displayName?: string
   ) => void;
 }
 
-const OTHER_WORKERS = [
+const OTHER_WORKERS: {
+  id: string;
+  email: string;
+  label: string;
+  role: Extract<UserRole, 'ouvrier' | 'apprenti' | 'stagiaire'>;
+}[] = [
   {
     id: 'b3000000-0000-4000-8000-000000000003',
     email: 'thomas.bernard@paysageconcept.fr',
     label: 'Thomas B.',
+    role: 'ouvrier',
   },
   {
     id: 'b4000000-0000-4000-8000-000000000004',
     email: 'lucas.moreau@paysageconcept.fr',
     label: 'Lucas M.',
+    role: 'apprenti',
   },
   {
     id: 'b5000000-0000-4000-8000-000000000005',
     email: 'antoine.petit@paysageconcept.fr',
     label: 'Antoine P.',
+    role: 'stagiaire',
   },
-] as const;
+];
 
 export const DemoAccountsPanel: React.FC<DemoAccountsPanelProps> = ({
   loading,
@@ -161,20 +171,28 @@ export const DemoAccountsPanel: React.FC<DemoAccountsPanelProps> = ({
 
         <div className="pt-2 border-t border-sable/50 dark:border-[#2A3F3C] space-y-1.5">
           <p className="text-[10px] text-foret/60 dark:text-[#B8C7C2] font-bold uppercase tracking-wider text-center">
-            Autres ouvriers de l'équipe
+            Autres membres de l'équipe
           </p>
           <div className="grid grid-cols-3 gap-1.5">
-            {OTHER_WORKERS.map((worker) => (
-              <button
-                key={worker.id}
-                type="button"
-                onClick={() => onDemoClick('ouvrier', worker.id, worker.email, worker.label)}
-                disabled={loading}
-                className="min-h-[48px] py-1.5 px-1 bg-craie hover:bg-sable/40 dark:bg-[#1E2E2C] dark:hover:bg-[#263A37] active:scale-95 border border-sable/70 dark:border-[#304744] rounded-lg text-center text-foret dark:text-[#EDF2F0] text-[11px] font-bold transition-all cursor-pointer truncate"
-              >
-                {worker.label}
-              </button>
-            ))}
+            {OTHER_WORKERS.map((worker) => {
+              const badge = getRoleBadgeConfig(worker.role);
+              return (
+                <button
+                  key={worker.id}
+                  type="button"
+                  onClick={() => onDemoClick(worker.role, worker.id, worker.email, worker.label)}
+                  disabled={loading}
+                  className="min-h-[48px] py-1.5 px-1 bg-craie hover:bg-sable/40 dark:bg-[#1E2E2C] dark:hover:bg-[#263A37] active:scale-95 border border-sable/70 dark:border-[#304744] rounded-lg flex flex-col items-center justify-center gap-0.5 text-foret dark:text-[#EDF2F0] transition-all cursor-pointer"
+                >
+                  <span className="text-[11px] font-bold truncate max-w-full">{worker.label}</span>
+                  <span
+                    className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full border leading-tight ${badge.className}`}
+                  >
+                    {badge.shortLabel}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

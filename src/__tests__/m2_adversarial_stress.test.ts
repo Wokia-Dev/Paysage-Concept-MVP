@@ -259,19 +259,19 @@ describe('Milestone 2 Adversarial Stress Suite (Challenger 2)', () => {
   // =========================================================================
   // Challenge 3: Supervisor vs Ouvrier Role State Segmentation
   // =========================================================================
-  describe('Challenge 3: Supervisor vs Ouvrier Role State Segmentation', () => {
-    it('verifies ouvrier role restricts selectable chantiers to assigned sites only', () => {
+  describe('Challenge 3: Supervisor vs Field Worker Role State Segmentation', () => {
+    it('verifies field worker roles (ouvrier, apprenti, stagiaire) restrict selectable chantiers to assigned sites only', () => {
       assert.match(
         homeContent,
-        /profile\?\.role === 'ouvrier'\s*\?\s*assignedChantiers\s*:\s*allChantiers/,
-        'Ouvrier must only be able to select assigned chantiers'
+        /!isSupervisorRole\(profile\?\.role\)\s*\?\s*assignedChantiers\s*:\s*allChantiers/,
+        'Non-supervisor roles must only be able to select assigned chantiers'
       );
     });
 
-    it('verifies team monitoring section is guarded strictly for chef_equipe and admin', () => {
+    it('verifies team monitoring section is guarded strictly for supervisors', () => {
       assert.match(
         homeContent,
-        /profile\?\.role === 'chef_equipe' \|\| profile\?\.role === 'admin'/,
+        /isSupervisorRole\(profile\.role\)/,
         'Team monitoring section must be guarded for supervisors only'
       );
     });

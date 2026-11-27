@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { usePlusDiagnostics } from '../hooks/usePlusDiagnostics';
-import { getRoleLabel } from '../lib/formatters';
+import { getRoleBadgeConfig, getRoleLabel, isSupervisorRole } from '../lib/formatters';
 import { ThemeSelector } from '../components/common/ThemeSelector';
 import logoUrl from '../assets/logo.png';
 
@@ -68,9 +68,13 @@ export function Plus() {
                 </span>
               )}
             </div>
-            <p className="text-xs text-sauge dark:text-[#9BB89B] capitalize font-semibold flex items-center gap-1.5 mt-0.5">
+            <p className="text-xs text-sauge dark:text-[#9BB89B] font-semibold flex items-center gap-1.5 mt-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span>{getRoleLabel(profile?.role, 'admin')}</span>
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getRoleBadgeConfig(profile?.role).className}`}
+              >
+                {getRoleLabel(profile?.role, 'full')}
+              </span>
             </p>
           </div>
         </div>
@@ -131,8 +135,8 @@ export function Plus() {
         </div>
       )}
 
-      {/* Espace Gestion / Chantiers pour Chef d'équipe & Admin */}
-      {(profile?.role === 'chef_equipe' || profile?.role === 'admin') && (
+      {/* Espace Gestion / Chantiers pour Chef d'équipe */}
+      {isSupervisorRole(profile?.role) && (
         <div className="bg-white dark:bg-[#172322] rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-sable/80 dark:border-[#2A3F3C] shadow-soft space-y-3">
           <span className="text-xs font-bold uppercase tracking-wider text-sauge dark:text-[#9BB89B] flex items-center gap-1.5">
             <Briefcase className="w-4 h-4 text-foret dark:text-[#9BB89B]" />

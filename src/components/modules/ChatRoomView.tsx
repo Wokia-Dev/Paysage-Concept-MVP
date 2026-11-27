@@ -3,7 +3,6 @@ import type { ChatConversation, ChatMessage } from '../../types/chat';
 import {
   ArrowLeft,
   Send,
-  Lock,
   Users,
   Briefcase,
   Trees,
@@ -47,8 +46,6 @@ export function ChatRoomView({
         return <Trees className="w-4 h-4 text-foret dark:text-[#9BB89B]" />;
       case 'chantier':
         return <Briefcase className="w-4 h-4 text-terracotta dark:text-[#E38D69]" />;
-      case 'direction':
-        return <Lock className="w-4 h-4 text-foret/70 dark:text-[#B8C7C2]" />;
     }
   };
 
@@ -58,8 +55,6 @@ export function ChatRoomView({
         return "Canal d'équipe";
       case 'chantier':
         return 'Canal de chantier';
-      case 'direction':
-        return 'Direction & Encadrement';
     }
   };
 

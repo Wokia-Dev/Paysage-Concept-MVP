@@ -399,10 +399,11 @@ describe('Tier 5 Adversarial Coverage Hardening (Challenger 1)', () => {
       // Container max-w-md centered
       assert.match(appLayoutContent, /max-w-md\s+flex-1\s+min-h-0\s+flex\s+flex-col\s+bg-craie/, 'AppLayout must center max-w-md container');
 
-      // Role label helper in AppLayout
-      assert.match(appLayoutContent, /case 'chef_equipe':\s*return 'Chef';/, 'AppLayout must label chef_equipe as Chef');
-      assert.match(appLayoutContent, /case 'admin':\s*return 'Admin';/, 'AppLayout must label admin as Admin');
-      assert.match(appLayoutContent, /default:\s*return 'Ouvrier';/, 'AppLayout must default role to Ouvrier');
+      // Role label helper in AppLayout / formatters
+      assert.match(appLayoutContent, /case 'chef_equipe':[\s\S]*?return 'Chef';/, 'Must label chef_equipe as Chef');
+      assert.match(appLayoutContent, /case 'apprenti':\s*return 'Apprenti';/, 'Must label apprenti as Apprenti');
+      assert.match(appLayoutContent, /case 'stagiaire':\s*return 'Stagiaire';/, 'Must label stagiaire as Stagiaire');
+      assert.match(appLayoutContent, /default:\s*return 'Ouvrier';/, 'Must default role to Ouvrier');
     });
 
     it('tests user initials helper logic against edge cases (empty strings, single letters)', () => {
@@ -463,12 +464,12 @@ describe('Tier 5 Adversarial Coverage Hardening (Challenger 1)', () => {
       assert.equal(mobilizationRate, 67); // 2 out of 3 = 67%
     });
 
-    it('verifies Planning role-based isolation enforces strict filtering for ouvrier', () => {
-      // White-box assertion on Planning.tsx
+    it('verifies Planning role-based isolation enforces strict filtering for non-supervisor roles', () => {
+      // White-box assertion on Planning.tsx + usePlanningData.ts
       assert.match(
         planningContent,
-        /if\s*\(profile\.role\s*===\s*['"]ouvrier['"]\)\s*return\s*profile\.id;/,
-        'Planning must strictly restrict ouvrier to their own assignments'
+        /if\s*\(!isSupervisorRole\(profile\.role\)\)\s*return\s*profile\.id;/,
+        'Planning must strictly restrict non-supervisors to their own assignments'
       );
       assert.match(
         planningContent,
@@ -577,7 +578,7 @@ describe('Tier 5 Adversarial Coverage Hardening (Challenger 1)', () => {
     it('verifies supervisor permissions gating on ChantierDetail', () => {
       assert.match(
         chantierDetailContent,
-        /const isSupervisor\s*=\s*profile\?\.role\s*===\s*['"]chef_equipe['"]\s*\|\|\s*profile\?\.role\s*===\s*['"]admin['"]/,
+        /const isSupervisor\s*=\s*isSupervisorRole\(profile\?\.role\)/,
         'ChantierDetail must gate management controls behind isSupervisor'
       );
       assert.match(
@@ -631,15 +632,6 @@ describe('Tier 5 Adversarial Coverage Hardening (Challenger 1)', () => {
           chantierId: 'c1',
           messages: [],
         },
-        {
-          id: 'direction',
-          title: 'Direction & Sécurité',
-          category: 'direction',
-          subtitle: 'Consignes canicule',
-          time: 'Lun',
-          unreadCount: 0,
-          messages: [],
-        },
       ];
 
       function filterChannels(
@@ -657,10 +649,9 @@ describe('Tier 5 Adversarial Coverage Hardening (Challenger 1)', () => {
       }
 
       // Tab filters
-      assert.equal(filterChannels(mockChannels, 'tous', '').length, 3);
+      assert.equal(filterChannels(mockChannels, 'tous', '').length, 2);
       assert.equal(filterChannels(mockChannels, 'equipe', '').length, 1);
       assert.equal(filterChannels(mockChannels, 'chantier', '').length, 1);
-      assert.equal(filterChannels(mockChannels, 'direction', '').length, 1);
 
       // Search filters
       assert.equal(filterChannels(mockChannels, 'tous', 'laurent').length, 1);

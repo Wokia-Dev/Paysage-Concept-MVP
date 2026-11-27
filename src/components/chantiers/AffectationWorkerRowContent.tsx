@@ -2,7 +2,7 @@ import React from 'react';
 import { Check, Plus } from 'lucide-react';
 import type { Profile } from '../../types/database';
 import type { OtherChantierConflict } from '../../lib/affectationsUtils';
-import { getInitials, getRoleLabel } from '../../lib/formatters';
+import { getInitials, getRoleBadgeConfig } from '../../lib/formatters';
 
 interface AffectationWorkerRowContentProps {
   profile: Profile;
@@ -41,8 +41,10 @@ export const AffectationWorkerRowContent: React.FC<AffectationWorkerRowContentPr
             <span className="text-xs font-bold leading-tight truncate">
               {profile.prenom} {profile.nom}
             </span>
-            <span className="text-[10px] font-semibold opacity-75">
-              ({getRoleLabel(profile.role, 'short')})
+            <span
+              className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full border ${getRoleBadgeConfig(profile.role).className}`}
+            >
+              {getRoleBadgeConfig(profile.role).shortLabel}
             </span>
           </div>
           {(coverageBadge || primaryConflict) && (

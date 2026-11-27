@@ -1,7 +1,7 @@
 import React from 'react';
 import { MessageSquare, Phone, X } from 'lucide-react';
 import type { Profile } from '../../types/database';
-import { sanitizePhoneHref } from '../../lib/formatters';
+import { getRoleBadgeConfig, sanitizePhoneHref } from '../../lib/formatters';
 
 interface MemberContactModalProps {
   member: Profile;
@@ -38,13 +38,11 @@ export const MemberContactModal: React.FC<MemberContactModalProps> = ({
               <h3 id="contact-modal-title" className="text-base font-extrabold text-foret dark:text-[#EDF2F0] leading-tight">
                 {member.prenom} {member.nom}
               </h3>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[11px] font-bold text-sauge dark:text-[#9BB89B] uppercase tracking-wider">
-                  {member.role === 'chef_equipe'
-                    ? "Chef d'équipe"
-                    : member.role === 'admin'
-                      ? 'Direction'
-                      : 'Ouvrier paysagiste'}
+              <div className="flex items-center gap-1.5 mt-1">
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getRoleBadgeConfig(member.role).className}`}
+                >
+                  {getRoleBadgeConfig(member.role).label}
                 </span>
                 {member.id === currentUserId && (
                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-sable text-foret dark:bg-[#263A37] dark:text-[#D5E6DC]">

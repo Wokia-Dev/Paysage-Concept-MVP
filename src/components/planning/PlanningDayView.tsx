@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import type { Profile } from '../../types/database';
 import { getTodayDateString } from '../../lib/dates';
-import { getMapsUrl } from '../../lib/formatters';
+import { getMapsUrl, getRoleBadgeConfig, isSupervisorRole } from '../../lib/formatters';
 import type { DayItem, PlanningMission } from '../../lib/planningUtils';
 
 interface PlanningDayViewProps {
@@ -134,14 +134,14 @@ export const PlanningDayView: React.FC<PlanningDayViewProps> = ({
           <div className="bg-white dark:bg-[#172322] rounded-3xl p-6 border border-sable/70 dark:border-[#2A3F3C] text-center space-y-2 shadow-soft">
             <CalendarDays className="w-8 h-8 mx-auto text-sauge/50 dark:text-[#9BB89B]/60" />
             <p className="text-sm font-bold text-foret dark:text-[#EDF2F0]">
-              {profile?.role === 'ouvrier' || targetFilterProfileId
+              {!isSupervisorRole(profile?.role) || targetFilterProfileId
                 ? 'Aucune intervention prévue pour cette journée'
                 : "Aucun chantier d'équipe planifié ce jour"}
             </p>
             <p className="text-xs text-sauge dark:text-[#9BB89B]">
-              {profile?.role === 'ouvrier'
+              {!isSupervisorRole(profile?.role)
                 ? 'Vous êtes en repos ou en attente d’affectation par votre chef d’équipe.'
-                : 'Aucun chantier ni ouvrier affecté à cette date.'}
+                : 'Aucun chantier ni équipier affecté à cette date.'}
             </p>
           </div>
         ) : (
@@ -238,15 +238,18 @@ export const PlanningDayView: React.FC<PlanningDayViewProps> = ({
                               <span className="text-xs font-bold">
                                 {m.prenom} {isCurrentUser && '(Vous)'}
                               </span>
-                              {m.role === 'chef_equipe' && (
+                              {(m.role === 'chef_equipe' ||
+                                m.role === 'admin' ||
+                                m.role === 'apprenti' ||
+                                m.role === 'stagiaire') && (
                                 <span
-                                  className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                                  className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
                                     isCurrentUser
-                                      ? 'bg-white/20 text-sable'
-                                      : 'bg-sauge/20 text-foret dark:bg-[#263A37] dark:text-[#9BB89B]'
+                                      ? 'bg-white/20 text-sable border-white/20'
+                                      : getRoleBadgeConfig(m.role).className
                                   }`}
                                 >
-                                  Chef
+                                  {getRoleBadgeConfig(m.role).shortLabel}
                                 </span>
                               )}
                             </div>

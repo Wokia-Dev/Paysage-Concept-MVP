@@ -10,6 +10,7 @@ import {
 import { useAuth } from '../context/useAuth';
 import { useHomeDashboard } from '../hooks/useHomeDashboard';
 import { formatHours } from '../lib/hours';
+import { isSupervisorRole } from '../lib/formatters';
 import { CircularProgressGauge } from '../components/common/CircularProgressGauge';
 import { HoursAnalyticsSection } from '../components/common/HoursAnalyticsSection';
 import { HomeHeader } from '../components/home/HomeHeader';
@@ -22,7 +23,7 @@ import { DailyDeclarationSummary } from '../components/home/DailyDeclarationSumm
 export function Home() {
   const { profile } = useAuth();
   const dashboard = useHomeDashboard(profile);
-  const isSupervisor = profile?.role === 'chef_equipe' || profile?.role === 'admin';
+  const isSupervisor = isSupervisorRole(profile?.role);
 
   return (
     <div className="space-y-5 pb-32 pb-[calc(env(safe-area-inset-bottom)+5rem)]">

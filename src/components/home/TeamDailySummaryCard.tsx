@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShieldCheck } from 'lucide-react';
 import type { Chantier } from '../../types/database';
+import { getRoleBadgeConfig } from '../../lib/formatters';
 import { calculateNormalHours, formatHours, type WorkerDailyStatus } from '../../lib/hours';
 import type { TeamSummaryMetrics } from '../../hooks/useHomeDashboard';
 
@@ -64,9 +65,16 @@ export const TeamDailySummaryCard: React.FC<TeamDailySummaryCardProps> = ({
                   {m.profile.prenom.charAt(0)}
                 </div>
                 <div>
-                  <p className="font-bold text-foret dark:text-[#EDF2F0]">
-                    {m.profile.prenom} {m.profile.nom}
-                  </p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="font-bold text-foret dark:text-[#EDF2F0]">
+                      {m.profile.prenom} {m.profile.nom}
+                    </p>
+                    <span
+                      className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full border ${getRoleBadgeConfig(m.profile.role).className}`}
+                    >
+                      {getRoleBadgeConfig(m.profile.role).shortLabel}
+                    </span>
+                  </div>
                   <p className="text-[10px] text-foret/60 dark:text-[#B8C7C2] truncate max-w-[150px]">
                     {matchedChantier?.nom_client || 'Aucun chantier'}
                   </p>

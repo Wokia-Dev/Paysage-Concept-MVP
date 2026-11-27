@@ -13,11 +13,13 @@ describe('Milestone 4: Chat UI & Secondary Screens Polish (R6 & R2)', () => {
   const chatRoomViewPath = resolve(projectRoot, 'src/components/modules/ChatRoomView.tsx');
   const chatTypesPath = resolve(projectRoot, 'src/types/chat.ts');
   const equipePath = resolve(projectRoot, 'src/pages/Equipe.tsx');
+  const formattersPath = resolve(projectRoot, 'src/lib/formatters.ts');
 
   const chatPreviewContent = readChatBundle();
   const chatRoomViewContent = readFileSync(chatRoomViewPath, 'utf-8');
   const chatTypesContent = readFileSync(chatTypesPath, 'utf-8');
   const equipeContent = readFileSync(equipePath, 'utf-8');
+  const formattersContent = readFileSync(formattersPath, 'utf-8');
   const plusContent = readPlusBundle();
   const chantiersContent = readChantiersBundle();
 
@@ -26,19 +28,19 @@ describe('Milestone 4: Chat UI & Secondary Screens Polish (R6 & R2)', () => {
       assert.ok(existsSync(chatTypesPath), 'src/types/chat.ts must exist');
       assert.match(
         chatTypesContent,
-        /ChannelCategory\s*=\s*['"]equipe['"]\s*\|\s*['"]chantier['"]\s*\|\s*['"]direction['"]/,
-        'chat.ts must define ChannelCategory with equipe, chantier, direction'
+        /ChannelCategory\s*=\s*['"]equipe['"]\s*\|\s*['"]chantier['"]/,
+        'chat.ts must define ChannelCategory with equipe and chantier (without direction)'
       );
       assert.match(chatTypesContent, /ChatMessage/, 'chat.ts must define ChatMessage');
       assert.match(chatTypesContent, /ChatConversation/, 'chat.ts must define ChatConversation');
     });
 
-    it('implements channel filter tabs for Tous, Équipe, Chantier, and Direction', () => {
+    it('implements channel filter tabs for Tous, Équipe, and Chantier without Direction', () => {
       assert.match(chatPreviewContent, /FILTER_TABS/, 'ChatPreview must declare FILTER_TABS');
       assert.match(chatPreviewContent, /Tous/, 'ChatPreview must include Tous filter tab');
       assert.match(chatPreviewContent, /Équipe/, 'ChatPreview must include Équipe filter tab');
       assert.match(chatPreviewContent, /Chantier/, 'ChatPreview must include Chantier filter tab');
-      assert.match(chatPreviewContent, /Direction/, 'ChatPreview must include Direction filter tab');
+      assert.doesNotMatch(chatPreviewContent, /Direction/i, 'ChatPreview must not expose Direction tab or channel');
     });
 
     it('renders Accent Terracotta unread counter badges with exact design specification', () => {
@@ -150,9 +152,11 @@ describe('Milestone 4: Chat UI & Secondary Screens Polish (R6 & R2)', () => {
       });
 
       it('guarantees high contrast role badges compliant with WCAG AA', () => {
-        assert.match(equipeContent, /text-amber-950/, 'Chef d equipe badge must use high contrast text');
-        assert.match(equipeContent, /text-indigo-950/, 'Admin badge must use high contrast text');
-        assert.match(equipeContent, /text-emerald-950/, 'Ouvrier badge must use high contrast text');
+        assert.match(formattersContent, /text-amber-950/, 'Chef d equipe badge must use high contrast text');
+        assert.match(formattersContent, /text-emerald-950/, 'Ouvrier badge must use high contrast text');
+        assert.match(formattersContent, /text-sky-950/, 'Apprenti badge must use high contrast text');
+        assert.match(formattersContent, /text-violet-950/, 'Stagiaire badge must use high contrast text');
+        assert.doesNotMatch(equipeContent, /Direction\s*\/\s*Conducteur|label:\s*'Direction'/, 'Equipe must not display Direction');
       });
     });
 

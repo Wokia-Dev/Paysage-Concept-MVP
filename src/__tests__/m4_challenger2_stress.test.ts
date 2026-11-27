@@ -12,6 +12,7 @@ const projectRoot = resolve(__dirname, '../..');
 
 describe('Milestone 4 Empirical Adversarial Stress Harness (Challenger 2)', () => {
   const equipePath = resolve(projectRoot, 'src/pages/Equipe.tsx');
+  const formattersPath = resolve(projectRoot, 'src/lib/formatters.ts');
   const chatRoomViewPath = resolve(projectRoot, 'src/components/modules/ChatRoomView.tsx');
   const chatTypesPath = resolve(projectRoot, 'src/types/chat.ts');
   const dbPath = resolve(projectRoot, 'src/lib/db.ts');
@@ -23,6 +24,7 @@ describe('Milestone 4 Empirical Adversarial Stress Harness (Challenger 2)', () =
   );
 
   const equipeContent = readFileSync(equipePath, 'utf-8');
+  const formattersContent = readFileSync(formattersPath, 'utf-8');
   const plusContent = readPlusBundle();
   const chantiersContent = readChantiersBundle();
   const chatPreviewContent = readChatBundle();
@@ -155,19 +157,29 @@ describe('Milestone 4 Empirical Adversarial Stress Harness (Challenger 2)', () =
 
       it('displays WCAG AA compliant role badges with distinct icons and colors', () => {
         assert.match(
-          equipeContent,
+          formattersContent,
           /case 'chef_equipe':[\s\S]*?text-amber-950/,
           'Chef d equipe badge must use high contrast amber-950'
         );
         assert.match(
-          equipeContent,
-          /case 'admin':[\s\S]*?text-indigo-950/,
-          'Admin badge must use high contrast indigo-950'
+          formattersContent,
+          /case 'apprenti':[\s\S]*?text-sky-950/,
+          'Apprenti badge must use high contrast sky-950'
         );
         assert.match(
-          equipeContent,
+          formattersContent,
+          /case 'stagiaire':[\s\S]*?text-violet-950/,
+          'Stagiaire badge must use high contrast violet-950'
+        );
+        assert.match(
+          formattersContent,
           /default:[\s\S]*?text-emerald-950/,
           'Ouvrier badge must use high contrast emerald-950'
+        );
+        assert.doesNotMatch(
+          equipeContent,
+          /Direction\s*\/\s*Conducteur|label:\s*'Direction'/,
+          'Equipe must not expose Direction or Admin role filters/labels'
         );
       });
 

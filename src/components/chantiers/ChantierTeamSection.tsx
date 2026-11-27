@@ -1,7 +1,7 @@
 import React from 'react';
 import { MessageSquare, Phone, Users } from 'lucide-react';
 import type { Profile } from '../../types/database';
-import { sanitizePhoneHref } from '../../lib/formatters';
+import { getRoleBadgeConfig, getRoleLabel, sanitizePhoneHref } from '../../lib/formatters';
 
 interface ChantierTeamSectionProps {
   teamMembers: Profile[];
@@ -59,7 +59,7 @@ export const ChantierTeamSection: React.FC<ChantierTeamSectionProps> = ({
                     {member.prenom} {isCurrentUser && '(Vous)'}
                   </span>
                   <span className="text-[9px] font-medium text-sauge dark:text-[#9BB89B] -mt-0.5">
-                    {member.role === 'chef_equipe' ? 'Chef' : 'Ouvrier'}
+                    {getRoleLabel(member.role, 'short')}
                   </span>
                 </div>
               );
@@ -103,9 +103,11 @@ export const ChantierTeamSection: React.FC<ChantierTeamSectionProps> = ({
                           </span>
                         )}
                       </div>
-                      <p className="text-[10px] font-semibold text-sauge dark:text-[#9BB89B] capitalize truncate">
-                        {member.role === 'chef_equipe' ? "Chef d'équipe" : 'Ouvrier paysagiste'}
-                      </p>
+                      <span
+                        className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border mt-0.5 ${getRoleBadgeConfig(member.role).className}`}
+                      >
+                        {getRoleBadgeConfig(member.role).label}
+                      </span>
                     </div>
                   </div>
 

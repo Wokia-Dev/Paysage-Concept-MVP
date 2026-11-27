@@ -16,8 +16,10 @@ import {
   generateUUID,
   getInitials,
   getMapsUrl,
+  getRoleBadgeConfig,
   getRoleLabel,
   getStatusBadge,
+  isSupervisorRole,
   sanitizePhoneHref,
 } from '../lib/formatters.ts';
 import {
@@ -91,17 +93,31 @@ describe('Refactored Pure Modules & Services Unit Tests', () => {
       assert.notEqual(u1, u2);
     });
 
-    it('formats role labels across full, short, and admin variants', () => {
+    it('formats role labels, badge configs, and supervisor privileges for all roles', () => {
       assert.equal(getRoleLabel('chef_equipe', 'full'), "Chef d'équipe");
-      assert.equal(getRoleLabel('admin', 'full'), 'Administrateur');
+      assert.equal(getRoleLabel('admin', 'full'), "Chef d'équipe");
       assert.equal(getRoleLabel('ouvrier', 'full'), 'Ouvrier paysagiste');
+      assert.equal(getRoleLabel('apprenti', 'full'), 'Apprenti');
+      assert.equal(getRoleLabel('stagiaire', 'full'), 'Stagiaire');
 
       assert.equal(getRoleLabel('chef_equipe', 'short'), 'Chef');
-      assert.equal(getRoleLabel('admin', 'short'), 'Admin');
+      assert.equal(getRoleLabel('admin', 'short'), 'Chef');
       assert.equal(getRoleLabel('ouvrier', 'short'), 'Ouvrier');
+      assert.equal(getRoleLabel('apprenti', 'short'), 'Apprenti');
+      assert.equal(getRoleLabel('stagiaire', 'short'), 'Stagiaire');
       assert.equal(getRoleLabel(undefined, 'short'), 'Ouvrier');
 
-      assert.equal(getRoleLabel('admin', 'admin'), 'Administrateur / Conducteur');
+      assert.equal(isSupervisorRole('chef_equipe'), true);
+      assert.equal(isSupervisorRole('admin'), true);
+      assert.equal(isSupervisorRole('ouvrier'), false);
+      assert.equal(isSupervisorRole('apprenti'), false);
+      assert.equal(isSupervisorRole('stagiaire'), false);
+      assert.equal(isSupervisorRole(undefined), false);
+
+      assert.match(getRoleBadgeConfig('apprenti').className, /text-sky-950/);
+      assert.match(getRoleBadgeConfig('stagiaire').className, /text-violet-950/);
+      assert.match(getRoleBadgeConfig('ouvrier').className, /text-emerald-950/);
+      assert.match(getRoleBadgeConfig('chef_equipe').className, /text-amber-950/);
     });
 
     it('computes initials, status badges, GPS URLs, and phone links safely', () => {

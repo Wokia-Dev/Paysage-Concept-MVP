@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'chef_equipe' | 'ouvrier';
+export type UserRole = 'admin' | 'chef_equipe' | 'ouvrier' | 'apprenti' | 'stagiaire';
 
 export type ChantierStatut = 'en_attente' | 'en_cours' | 'termine';
 

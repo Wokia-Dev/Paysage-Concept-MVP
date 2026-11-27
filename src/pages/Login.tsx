@@ -35,7 +35,7 @@ export function Login() {
     typeof navigator !== 'undefined' && !navigator.onLine ? 'demo' : 'supabase'
   );
   const [demoFallbackCandidate, setDemoFallbackCandidate] = useState<{
-    roleToUse: 'ouvrier' | 'chef_equipe';
+    roleToUse: 'ouvrier' | 'chef_equipe' | 'apprenti' | 'stagiaire';
     specificProfileId?: string;
     label: string;
   } | null>(null);
@@ -125,7 +125,7 @@ export function Login() {
   };
 
   const handleDemoClick = async (
-    roleToUse: 'ouvrier' | 'chef_equipe',
+    roleToUse: 'ouvrier' | 'chef_equipe' | 'apprenti' | 'stagiaire',
     specificProfileId?: string,
     specificEmail?: string,
     displayName?: string
@@ -305,8 +305,9 @@ export function Login() {
                     className="w-full pl-8 pr-3 py-2 bg-craie dark:bg-[#1E2E2C] rounded-xl border border-sable/90 dark:border-[#304744] text-xs text-foret dark:text-[#EDF2F0] focus:outline-none focus:ring-2 focus:ring-foret/20 dark:focus:ring-sauge/40 appearance-none cursor-pointer font-medium"
                   >
                     <option value="ouvrier">Ouvrier paysagiste</option>
+                    <option value="apprenti">Apprenti</option>
+                    <option value="stagiaire">Stagiaire</option>
                     <option value="chef_equipe">Chef d'équipe</option>
-                    <option value="admin">Administrateur / Conducteur</option>
                   </select>
                 </div>
               </div>

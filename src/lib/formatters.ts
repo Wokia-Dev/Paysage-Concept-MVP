@@ -15,41 +15,86 @@ export function generateUUID(): string {
 }
 
 /**
+ * Indique si un rôle dispose des privilèges de supervision (chef d'équipe ou admin interne).
+ * Les ouvriers, apprentis et stagiaires sont tous des profils terrain non superviseurs.
+ */
+export function isSupervisorRole(role?: UserRole | string | null): boolean {
+  return role === 'chef_equipe' || role === 'admin';
+}
+
+/**
  * Retourne le libellé français d'un rôle utilisateur.
+ * N'affiche jamais « Admin », « Administrateur » ou « Direction » dans l'interface.
  */
 export function getRoleLabel(
   role?: UserRole | string,
-  variant: 'full' | 'short' | 'admin' = 'full'
+  variant: 'full' | 'short' = 'full'
 ): string {
   if (variant === 'short') {
     switch (role) {
       case 'chef_equipe':
-        return 'Chef';
       case 'admin':
-        return 'Admin';
+        return 'Chef';
+      case 'apprenti':
+        return 'Apprenti';
+      case 'stagiaire':
+        return 'Stagiaire';
       default:
         return 'Ouvrier';
     }
   }
 
-  if (variant === 'admin') {
-    switch (role) {
-      case 'chef_equipe':
-        return "Chef d'équipe";
-      case 'admin':
-        return 'Administrateur / Conducteur';
-      default:
-        return 'Ouvrier paysagiste';
-    }
-  }
-
   switch (role) {
     case 'chef_equipe':
-      return "Chef d'équipe";
     case 'admin':
-      return 'Administrateur';
+      return "Chef d'équipe";
+    case 'apprenti':
+      return 'Apprenti';
+    case 'stagiaire':
+      return 'Stagiaire';
     default:
       return 'Ouvrier paysagiste';
+  }
+}
+
+/**
+ * Retourne les libellés et classes Tailwind WCAG AA (clair + sombre) du badge de rôle.
+ */
+export function getRoleBadgeConfig(role?: UserRole | string): {
+  label: string;
+  shortLabel: string;
+  className: string;
+} {
+  switch (role) {
+    case 'chef_equipe':
+    case 'admin':
+      return {
+        label: "Chef d'équipe",
+        shortLabel: 'Chef',
+        className:
+          'bg-amber-100/90 text-amber-950 border-amber-300 dark:bg-amber-950/75 dark:text-amber-300 dark:border-amber-700/60',
+      };
+    case 'apprenti':
+      return {
+        label: 'Apprenti',
+        shortLabel: 'Apprenti',
+        className:
+          'bg-sky-100/90 text-sky-950 border-sky-300 dark:bg-sky-950/75 dark:text-sky-300 dark:border-sky-700/60',
+      };
+    case 'stagiaire':
+      return {
+        label: 'Stagiaire',
+        shortLabel: 'Stagiaire',
+        className:
+          'bg-violet-100/90 text-violet-950 border-violet-300 dark:bg-violet-950/75 dark:text-violet-300 dark:border-violet-700/60',
+      };
+    default:
+      return {
+        label: 'Ouvrier paysagiste',
+        shortLabel: 'Ouvrier',
+        className:
+          'bg-emerald-100/90 text-emerald-950 border-emerald-300 dark:bg-emerald-950/75 dark:text-emerald-300 dark:border-emerald-700/60',
+      };
   }
 }
 

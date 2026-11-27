@@ -7,7 +7,6 @@ import {
   MessageSquare,
   Trees,
   Briefcase,
-  Lock,
   Search,
   Sparkles,
   Clock,
@@ -22,7 +21,6 @@ const FILTER_TABS: {
   { key: 'tous', label: 'Tous', icon: MessageSquare },
   { key: 'equipe', label: 'Équipe', icon: Trees },
   { key: 'chantier', label: 'Chantier', icon: Briefcase },
-  { key: 'direction', label: 'Direction', icon: Lock },
 ];
 
 export function ChatPreview() {
@@ -154,7 +152,7 @@ export function ChatPreview() {
           )}
         </div>
 
-        {/* Onglets Filtres : Tous | Équipe | Chantier | Direction */}
+        {/* Onglets Filtres : Tous | Équipe | Chantier */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
           {FILTER_TABS.map((tab) => {
             const Icon = tab.icon;
@@ -205,7 +203,6 @@ export function ChatPreview() {
         ) : (
           filteredChannels.map((ch) => {
             const isEquipe = ch.category === 'equipe';
-            const isDirection = ch.category === 'direction';
 
             return (
               <div
@@ -217,8 +214,6 @@ export function ChatPreview() {
                   <div className="w-11 h-11 rounded-2xl bg-sable/60 dark:bg-[#1E2E2C] text-foret dark:text-[#EDF2F0] flex items-center justify-center shrink-0 border border-sable/50 dark:border-[#304744] group-hover:scale-105 transition-transform">
                     {isEquipe ? (
                       <Trees className="w-5 h-5 text-foret dark:text-[#9BB89B]" />
-                    ) : isDirection ? (
-                      <Lock className="w-5 h-5 text-foret/80 dark:text-[#B8C7C2]" />
                     ) : (
                       <Briefcase className="w-5 h-5 text-terracotta dark:text-[#E38D69]" />
                     )}
@@ -229,11 +224,6 @@ export function ChatPreview() {
                       <h2 className="text-xs sm:text-sm font-extrabold text-foret dark:text-[#EDF2F0] truncate">
                         {ch.title}
                       </h2>
-                      {isDirection && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sable text-foret border border-sable/80 dark:bg-[#263A37] dark:text-[#D5E6DC] dark:border-[#38524E] shrink-0">
-                          Direction
-                        </span>
-                      )}
                     </div>
                     <p className="text-xs text-foret/70 dark:text-[#B8C7C2] truncate mt-0.5">
                       {ch.subtitle}

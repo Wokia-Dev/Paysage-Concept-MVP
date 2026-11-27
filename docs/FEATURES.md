@@ -6,26 +6,26 @@ Ce document recense l'ensemble des fonctionnalités actives de la V1 devant imp�
 
 ## 1. Matrice des droits par rôle
 
-| Fonctionnalité / Route | `ouvrier` | `chef_equipe` | `admin` |
-|---|---|---|---|
-| Connexion Supabase & comptes démo (`/login`) | Oui | Oui | Oui |
-| Accueil & déclaration d'heures (`/`) | Oui (ses chantiers affectés) | Oui (tous les chantiers) | Oui (tous les chantiers) |
-| Synthèse équipe du jour sur Accueil | Non | Oui | Oui |
-| Planning (`/planning`) | Ses affectations uniquement | Personnel / Global / Par équipier | Personnel / Global / Par équipier |
-| Catalogue chantiers (`/chantiers`) | Bloqué (redirection `/`) | Oui (CRUD + affectations) | Oui (CRUD + affectations) |
-| Fiche chantier (`/chantier/:id`) | Lecture seule si affecté au moins 1 fois, sinon bloqué | Lecture + changement statut + affectation | Lecture + changement statut + affectation |
-| Annuaire Équipe (`/equipe`) | Oui | Oui | Oui |
-| Messagerie mockée (`/chat`) | Oui | Oui | Oui |
-| Options / Diagnostic (`/plus`) | Oui (sans bloc gestion chantiers) | Oui + raccourci `/chantiers` | Oui + raccourci `/chantiers` |
+| Fonctionnalité / Route | `ouvrier` / `apprenti` / `stagiaire` | `chef_equipe` (et `admin` interne) |
+|---|---|---|
+| Connexion Supabase & comptes démo (`/login`) | Oui | Oui |
+| Accueil & déclaration d'heures (`/`) | Oui (ses chantiers affectés) | Oui (tous les chantiers) |
+| Synthèse équipe du jour sur Accueil | Non | Oui |
+| Planning (`/planning`) | Ses affectations uniquement | Personnel / Global / Par équipier |
+| Catalogue chantiers (`/chantiers`) | Bloqué (redirection `/`) | Oui (CRUD + affectations) |
+| Fiche chantier (`/chantier/:id`) | Lecture seule si affecté au moins 1 fois, sinon bloqué | Lecture + changement statut + affectation |
+| Annuaire Équipe (`/equipe`) | Oui | Oui |
+| Messagerie mockée (`/chat`) | Oui | Oui |
+| Options / Diagnostic (`/plus`) | Oui (sans bloc gestion chantiers) | Oui + raccourci `/chantiers` |
 
 ---
 
 ## 2. Inventaire exhaustif des fonctionnalités V1
 
 ### F1 — Authentification hybride (Supabase + Démo locale) ([Login.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/pages/Login.tsx), [AuthContext.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/context/AuthContext.tsx))
-- **Connexion / Inscription Supabase** : email + mot de passe ; en mode inscription, saisie de `prenom`, `nom` et `role` (`ouvrier`, `chef_equipe`, `admin`). Gestion du cas `Email not confirmed`.
+- **Connexion / Inscription Supabase** : email + mot de passe ; en mode inscription, saisie de `prenom`, `nom` et `role` (`ouvrier`, `apprenti`, `stagiaire`, `chef_equipe`). Gestion du cas `Email not confirmed`.
 - **Restauration instantanée offline-first** : au lancement, restaure `paysage_active_profile_id` depuis Dexie avant même d'attendre Supabase.
-- **Accès Démo 1-clic** pour 5 profils pré-seedés (Jean Dupont ouvrier, Marc Vasseur chef d'équipe, Thomas Bernard, Lucas Moreau, Antoine Petit) : tente d'abord un `signInWithPassword` réel avec `Paysage2026!` si en ligne, sinon bascule sur `loginDemo()` en mode local (`isDemo = true`).
+- **Accès Démo 1-clic** pour 5 profils pré-seedés (Jean Dupont ouvrier, Marc Vasseur chef d'équipe, Thomas Bernard ouvrier, Lucas Moreau apprenti, Antoine Petit stagiaire) : tente d'abord un `signInWithPassword` réel avec `Paysage2026!` si en ligne, sinon bascule sur `loginDemo()` en mode local (`isDemo = true`).
 - **Déconnexion** : `supabase.auth.signOut()` si en ligne + nettoyage `localStorage` (`paysage_active_profile_id`, `paysage_is_demo`).
 
 ### F2 — Shell PWA & Navigation persistante ([AppLayout.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/components/layout/AppLayout.tsx), [BottomNav.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/components/layout/BottomNav.tsx))
@@ -74,8 +74,8 @@ Ce document recense l'ensemble des fonctionnalités actives de la V1 devant imp�
 - **Catalogue Chantiers (`Chantiers`)** : recherche instantanée (client, adresse, description), filtres statut (`Tous`, `En cours`, `En attente`, `Terminés`), modales de création, d'édition et d'affectation d'équipiers par date.
 
 ### F8 — Annuaire Équipe, Messagerie Mock & Options ([Equipe.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/pages/Equipe.tsx), [ChatPreview.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/pages/ChatPreview.tsx), [Plus.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/pages/Plus.tsx))
-- **Équipe** : recherche par nom/prénom, filtres par rôle (`Tous`, `Chefs d'équipe`, `Ouvriers`, `Direction`), affichage du chantier d'affectation du jour et boutons d'action `tel:` / `sms:`.
-- **Chat Preview** : 5 canaux statiques mockés (`INITIAL_CHANNELS`), recherche, onglets `Tous | Équipe | Chantier | Direction`, support query param `?channel=` ou `?chantier=`, remise à zéro locale du compteur non-lu à l'ouverture, salle de discussion `ChatRoomView` avec envoi de messages ajoutés en mémoire React uniquement.
+- **Équipe** : recherche par nom/prénom, filtres par rôle (`Tous`, `Chefs d'équipe`, `Ouvriers`, `Apprentis`, `Stagiaires`), badges visuels distincts par rôle, affichage du chantier d'affectation du jour et boutons d'action `tel:` / `sms:`.
+- **Chat Preview** : 4 canaux statiques mockés (`INITIAL_CHANNELS`), recherche, onglets `Tous | Équipe | Chantier`, support query param `?channel=` ou `?chantier=`, remise à zéro locale du compteur non-lu à l'ouverture, salle de discussion `ChatRoomView` avec envoi de messages ajoutés en mémoire React uniquement.
 - **Plus** : carte profil + badge `Démo Locale` / `Compte Supabase`, sélecteur de thème d'affichage à 3 états (`Système` / `Clair` / `Sombre`) dans le bloc **Apparence & Thème**, accès superviseur à `/chantiers`, compteurs Dexie (`pointages`, `en attente`, `chantiers`, `profiles`), bouton `Forcer la synchronisation Supabase`, bouton `Réinitialiser les données locales démo` (`reseedDatabase()`), guide d'installation PWA iOS/Android, version MVP (`1.0.0`) et déconnexion.
 
 ### F9 — Thème d'affichage Clair / Sombre / Système ([ThemeContext.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/context/ThemeContext.tsx), [ThemeSelector.tsx](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/components/common/ThemeSelector.tsx), [theme.ts](file:///home/quent/Work/Perso/Paysage-Concept-MVP/src/lib/theme.ts))

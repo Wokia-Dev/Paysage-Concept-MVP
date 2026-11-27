@@ -77,12 +77,12 @@ describe('Home Page UI Cleanup & Role-Based Access Restriction', () => {
   describe('2. Role-Based Access for Job Sites (Chantiers)', () => {
     it('restricts global Chantiers route in App.tsx to supervisors with SupervisorRoute', () => {
       assert.match(appContent, /function SupervisorRoute/);
-      assert.match(appContent, /profile\?\.role === 'ouvrier'/);
+      assert.match(appContent, /!isSupervisorRole\(profile\?\.role\)/);
       assert.match(appContent, /<SupervisorRoute>[\s\S]*?<Chantiers \/>[\s\S]*?<\/SupervisorRoute>/);
     });
 
-    it('enforces role check in Chantiers.tsx redirecting ouvrier to root', () => {
-      assert.match(chantiersContent, /profile\?\.role === 'ouvrier'/);
+    it('enforces role check in Chantiers.tsx redirecting non-supervisors (ouvrier, apprenti, stagiaire) to root', () => {
+      assert.match(chantiersContent, /!isSupervisorRole\(profile\?\.role\)/);
       assert.match(chantiersContent, /<Navigate to="\/" replace \/>/);
     });
 
@@ -93,23 +93,23 @@ describe('Home Page UI Cleanup & Role-Based Access Restriction', () => {
       assert.match(chantierDetailContent, /Vous n'êtes pas affecté à ce chantier/);
     });
 
-    it('ensures Home.tsx restricts selectable and hero chantiers for ouvrier strictly to their assignments', () => {
-      assert.match(homeContent, /availableChantiers = profile\?\.role === 'ouvrier' \? assignedChantiers : allChantiers/);
-      assert.match(homeContent, /profile\?\.role === 'ouvrier' \? null : allChantiers\[0\]/);
+    it('ensures Home.tsx restricts selectable and hero chantiers for ouvrier, apprenti, stagiaire strictly to their assignments', () => {
+      assert.match(homeContent, /availableChantiers = !isSupervisorRole\(profile\?\.role\) \? assignedChantiers : allChantiers/);
+      assert.match(homeContent, /!isSupervisorRole\(profile\?\.role\) \? null : allChantiers\[0\]/);
     });
 
-    it('only presents Chantiers catalog management link in Plus.tsx to chef_equipe and admin', () => {
-      assert.match(plusContent, /profile\?\.role === 'chef_equipe' \|\| profile\?\.role === 'admin'/);
+    it('only presents Chantiers catalog management link in Plus.tsx to supervisors', () => {
+      assert.match(plusContent, /isSupervisorRole\(profile\?\.role\)/);
       assert.match(plusContent, /to="\/chantiers"/);
       assert.match(plusContent, /Catalogue des chantiers/);
     });
 
     it('renders dedicated job site management shortcut on Home page exclusively for supervisors', () => {
-      // Must be conditioned on chef_equipe or admin (via isSupervisor)
+      // Must be conditioned on isSupervisorRole (chef_equipe or admin)
       assert.match(
         homePageContent,
-        /isSupervisor\s*=\s*profile\?\.role === 'chef_equipe' \|\| profile\?\.role === 'admin'/,
-        'Home page must compute isSupervisor strictly from chef_equipe or admin'
+        /isSupervisor\s*=\s*isSupervisorRole\(profile\?\.role\)/,
+        'Home page must compute isSupervisor via isSupervisorRole'
       );
       assert.match(
         homePageContent,

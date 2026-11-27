@@ -8,6 +8,7 @@ import {
   type BatchAffectationPayload,
 } from '../lib/chantiersService';
 import { formatBatchAffectationFeedback } from '../lib/affectationsUtils';
+import { isSupervisorRole } from '../lib/formatters';
 import type { Affectation, Chantier, ChantierStatut, Profile } from '../types/database';
 
 export function useChantierDetail(id: string | undefined, profile: Profile | null) {
@@ -23,7 +24,7 @@ export function useChantierDetail(id: string | undefined, profile: Profile | nul
   const [actionFeedbackType, setActionFeedbackType] = useState<'success' | 'error'>('success');
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isSupervisor = profile?.role === 'chef_equipe' || profile?.role === 'admin';
+  const isSupervisor = isSupervisorRole(profile?.role);
 
   const showFeedback = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
     if (feedbackTimerRef.current) {
@@ -166,9 +167,9 @@ export function useChantierDetail(id: string | undefined, profile: Profile | nul
   );
 
   const isAssignedWorker = useMemo(() => {
-    if (!profile || profile.role !== 'ouvrier') return true;
+    if (!profile || isSupervisor) return true;
     return affectations.some((a) => a.profile_id === profile.id);
-  }, [profile, affectations]);
+  }, [profile, isSupervisor, affectations]);
 
   return {
     chantier,

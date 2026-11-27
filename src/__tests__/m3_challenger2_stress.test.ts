@@ -140,6 +140,8 @@ describe('Milestone 3 Empirical Adversarial Stress Harness (Challenger 2)', () =
 
       // Unauthorized roles & adversarial edge cases
       assert.equal(evaluateSupervisor('ouvrier'), false, 'ouvrier must NOT be supervisor');
+      assert.equal(evaluateSupervisor('apprenti'), false, 'apprenti must NOT be supervisor');
+      assert.equal(evaluateSupervisor('stagiaire'), false, 'stagiaire must NOT be supervisor');
       assert.equal(evaluateSupervisor(undefined), false, 'undefined role must NOT be supervisor');
       assert.equal(evaluateSupervisor(null), false, 'null role must NOT be supervisor');
       assert.equal(evaluateSupervisor(''), false, 'empty string role must NOT be supervisor');
@@ -149,11 +151,11 @@ describe('Milestone 3 Empirical Adversarial Stress Harness (Challenger 2)', () =
     });
 
     it('verifies ChantierDetail guards supervisor management zone with isSupervisor conditional', () => {
-      // Must check profile?.role === 'chef_equipe' || profile?.role === 'admin'
+      // Must check isSupervisorRole(profile?.role)
       assert.match(
         chantierDetailContent,
-        /const\s+isSupervisor\s*=\s*profile\?\.role\s*===\s*['"]chef_equipe['"]\s*\|\|\s*profile\?\.role\s*===\s*['"]admin['"]/,
-        'ChantierDetail must compute isSupervisor strictly from chef_equipe and admin roles'
+        /const\s+isSupervisor\s*=\s*isSupervisorRole\(profile\?\.role\)/,
+        'ChantierDetail must compute isSupervisor via isSupervisorRole'
       );
 
       // Must guard supervisor panel
@@ -261,19 +263,19 @@ describe('Milestone 3 Empirical Adversarial Stress Harness (Challenger 2)', () =
       assert.equal(day28Affs.length, 2, '2026-10-28 assignments count must remain 2');
     });
 
-    it('verifies Planning enforces strict personal filtering for ouvrier role', () => {
-      // In usePlanningData.ts: targetFilterProfileId strictly checks profile.role === 'ouvrier'
+    it('verifies Planning enforces strict personal filtering for non-supervisor roles (ouvrier, apprenti, stagiaire)', () => {
+      // In usePlanningData.ts: targetFilterProfileId strictly checks !isSupervisorRole(profile.role)
       assert.match(
         planningContent,
-        /if\s*\(\s*profile\.role\s*===\s*['"]ouvrier['"]\s*\)\s*return\s+profile\.id\s*;/,
-        'Planning must strictly return profile.id when user role is ouvrier'
+        /if\s*\(\s*!isSupervisorRole\(profile\.role\)\s*\)\s*return\s+profile\.id\s*;/,
+        'Planning must strictly return profile.id when user role is not a supervisor'
       );
 
-      // Ouvrier cannot access supervisor dropdown
+      // Non-supervisors cannot access supervisor dropdown
       assert.match(
         planningContent,
-        /isSupervisor\s*=\s*profile\?\.role\s*===\s*['"]chef_equipe['"]\s*\|\|\s*profile\?\.role\s*===\s*['"]admin['"]/,
-        'Planning must compute isSupervisor strictly'
+        /isSupervisor\s*=\s*isSupervisorRole\(profile\?\.role\)/,
+        'Planning must compute isSupervisor via isSupervisorRole'
       );
       assert.match(
         planningContent,

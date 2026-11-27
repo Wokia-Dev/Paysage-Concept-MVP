@@ -46,7 +46,7 @@ export function ChantierDetail() {
     );
   }
 
-  if (profile?.role === 'ouvrier' && !detail.isAssignedWorker) {
+  if (!detail.isSupervisor && !detail.isAssignedWorker) {
     return (
       <div className="bg-white dark:bg-[#172322] rounded-3xl p-6 text-center space-y-4 border border-sable dark:border-[#2A3F3C] shadow-soft max-w-md mx-auto my-6">
         <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950/70 dark:border-amber-700/60 dark:text-amber-300 flex items-center justify-center mx-auto">
@@ -55,8 +55,8 @@ export function ChantierDetail() {
         <div>
           <h2 className="text-base font-bold text-foret dark:text-[#EDF2F0]">Accès restreint</h2>
           <p className="text-xs text-foret/70 dark:text-[#B8C7C2] mt-1 leading-relaxed">
-            Vous n'êtes pas affecté à ce chantier. Les ouvriers ont accès uniquement à la fiche
-            détaillée de leur chantier d'intervention.
+            Vous n'êtes pas affecté à ce chantier. Les membres terrain (ouvriers, apprentis, stagiaires)
+            ont accès uniquement à la fiche détaillée de leur chantier d'intervention.
           </p>
         </div>
         <button

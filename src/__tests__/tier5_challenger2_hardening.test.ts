@@ -638,16 +638,16 @@ describe('Tier 5 Independent Adversarial Coverage Hardening (Challenger 2)', () 
       );
     });
 
-    it('enforces worker role isolation: ouvrier strictly restricted to own planning', () => {
+    it('enforces worker role isolation: non-supervisor roles strictly restricted to own planning', () => {
       assert.match(
         planningContent,
-        /if\s*\(\s*profile\.role\s*===\s*['"]ouvrier['"]\s*\)\s*return\s+profile\.id;/,
-        'Worker role must be strictly clamped to own profile ID'
+        /if\s*\(\s*!isSupervisorRole\(profile\.role\)\s*\)\s*return\s+profile\.id;/,
+        'Worker roles must be strictly clamped to own profile ID'
       );
       assert.match(
         planningContent,
-        /profile\?\.role\s*===\s*['"]ouvrier['"][\s\S]*?Vos missions personnelles planifiées/,
-        'Worker role must display personal schedule label'
+        /!isSupervisor[\s\S]*?Vos missions personnelles planifiées/,
+        'Worker roles must display personal schedule label'
       );
     });
   });
@@ -775,7 +775,7 @@ describe('Tier 5 Independent Adversarial Coverage Hardening (Challenger 2)', () 
       );
     });
 
-    it('simulates channel filter tabs (Tous | Équipe | Chantier | Direction)', () => {
+    it('simulates channel filter tabs (Tous | Équipe | Chantier)', () => {
       // Extract channels from ChatPreview structure
       const sampleChannels: ChatConversation[] = [
         {
@@ -807,15 +807,6 @@ describe('Tier 5 Independent Adversarial Coverage Hardening (Challenger 2)', () 
           chantierId: 'c2',
           messages: [],
         },
-        {
-          id: 'direction',
-          title: 'Direction & Sécurité',
-          category: 'direction',
-          subtitle: 'Consignes canicule',
-          time: 'Lun',
-          unreadCount: 0,
-          messages: [],
-        },
       ];
 
       function filterChannels(tab: FilterCategory, query: string): ChatConversation[] {
@@ -829,7 +820,7 @@ describe('Tier 5 Independent Adversarial Coverage Hardening (Challenger 2)', () 
       }
 
       // Filter: Tous
-      assert.equal(filterChannels('tous', '').length, 4);
+      assert.equal(filterChannels('tous', '').length, 3);
 
       // Filter: Équipe
       const equipeChannels = filterChannels('equipe', '');
@@ -840,18 +831,13 @@ describe('Tier 5 Independent Adversarial Coverage Hardening (Challenger 2)', () 
       const chantierChannels = filterChannels('chantier', '');
       assert.equal(chantierChannels.length, 2);
 
-      // Filter: Direction
-      const directionChannels = filterChannels('direction', '');
-      assert.equal(directionChannels.length, 1);
-      assert.equal(directionChannels[0].id, 'direction');
-
       // Search Query filter
       const searchLaurent = filterChannels('tous', 'laurent');
       assert.equal(searchLaurent.length, 1);
       assert.equal(searchLaurent[0].id, 'laurent');
 
       // Combined Tab + Search Query
-      const searchMiss = filterChannels('direction', 'laurent');
+      const searchMiss = filterChannels('equipe', 'laurent');
       assert.equal(searchMiss.length, 0);
     });
 
