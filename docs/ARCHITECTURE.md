@@ -9,7 +9,7 @@ Ce document décrit l'architecture réelle du dépôt telle qu'implémentée en 
 ```text
 Paysage-Concept-MVP/
 ├── .github/workflows/deploy.yml      # CI/CD GitHub Pages : npm ci, build avec VITE_BASE_PATH, copie dist/index.html -> dist/404.html
-├── .env.example                      # Modèle de configuration Supabase (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
+├── .env.example                      # Modèle de configuration Supabase (VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY)
 ├── index.html                        # Point d'entrée HTML, meta PWA iOS/Android, viewport-fit=cover, script synchrone anti-FOUC (thème & theme-color)
 ├── package.json                      # Dépendances et scripts (dev, build, test, lint, preview)
 ├── vite.config.ts                    # Config Vite + React + Tailwind v4 + VitePWA (manifest, Workbox generateSW)
